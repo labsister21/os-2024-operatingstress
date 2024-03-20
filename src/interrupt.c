@@ -47,6 +47,10 @@ void main_interrupt_handler(struct InterruptFrame frame)
     }
 }
 
+void activate_keyboard_interrupt(void) {
+    out(PIC1_DATA, in(PIC1_DATA) & ~(1 << IRQ_KEYBOARD));
+}
+
 // void activate_keyboard_interrupt(void)
 // {
 //     out(PIC1_DATA, PIC_DISABLE_ALL_MASK ^ (1 << IRQ_KEYBOARD));
