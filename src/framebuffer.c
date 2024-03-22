@@ -7,11 +7,12 @@
 
 void framebuffer_set_cursor(uint8_t r, uint8_t c)
 {
-    out(CURSOR_PORT_CMD, 0x0A);
-    out(CURSOR_PORT_DATA, (in(CURSOR_PORT_DATA) & 0xC0) | r);
-
-    out(CURSOR_PORT_CMD, 0x0B);
-    out(CURSOR_PORT_DATA, (in(CURSOR_PORT_DATA) & 0xE0) | c);
+    uint16_t pos = r * 80 + c; // Menghitung posisi cursor
+    // Mengirimkan posisi cursor ke port CURSOR_PORT_CMD dan CURSOR_PORT_DATA
+    out(CURSOR_PORT_CMD, 0x0F);
+    out(CURSOR_PORT_DATA, (uint8_t)(pos & 0xFF));
+    out(CURSOR_PORT_CMD, 0x0E);
+    out(CURSOR_PORT_DATA, (uint8_t)((pos >> 8) & 0xFF));
 }
 
 void framebuffer_write(uint8_t row, uint8_t col, char c, uint8_t fg, uint8_t bg)
