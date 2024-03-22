@@ -33,6 +33,8 @@ struct KeyboardDriverState {
     bool read_extended_mode;
     bool keyboard_input_on;
     char keyboard_buffer;
+    uint16_t row;
+    uint16_t col;
 } __attribute((packed));
 
 
@@ -49,6 +51,8 @@ void keyboard_state_deactivate(void);
 
 // Get keyboard buffer value and flush the buffer - @param buf Pointer to char buffer
 void get_keyboard_buffer(char *buf);
+
+// Nanti tambah fungsi internal buat pindah column dan row
 
 /* -- Keyboard Interrupt Service Routine -- */
 

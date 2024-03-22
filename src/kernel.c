@@ -21,7 +21,11 @@ void kernel_setup(void) {
     while (true) {
          char c;
          get_keyboard_buffer(&c);
-         if (c) framebuffer_write(0, col++, c, 0xF, 0);
+         if (c) {
+            framebuffer_write(0, col++, c, 0xF, 0);
+            framebuffer_write(0, col, ' ', 0xf, 0);
+            framebuffer_set_cursor(0, col);
+         } 
     }
 }
 
