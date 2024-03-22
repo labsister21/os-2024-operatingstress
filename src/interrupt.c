@@ -43,7 +43,9 @@ void main_interrupt_handler(struct InterruptFrame frame)
 {
     switch (frame.int_number)
     {
-        // TODO
+    case PIC1_OFFSET + IRQ_KEYBOARD:
+        keyboard_isr();
+        break;
     }
 }
 

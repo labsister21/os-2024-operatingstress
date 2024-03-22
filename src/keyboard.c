@@ -24,7 +24,7 @@ const char keyboard_scancode_1_to_ascii_map[256] = {
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
 };
 
-static struct KeyboardDriverState keyboard_state = {0};
+static struct KeyboardDriverState keyboard_state = {false, false, 0};
 
 // Activate keyboard ISR / start listen keyboard & save to buffer
 void keyboard_state_activate(void) {
@@ -38,8 +38,8 @@ void keyboard_state_deactivate(void) {
 
 // Get keyboard buffer value and flush the buffer - @param buf Pointer to char buffer
 void get_keyboard_buffer(char *buf) {
-    // Copy keyboard buffer value to provided buffer
-    *buf = keyboard_state.keyboard_buffer;
+        // Copy keyboard buffer value to provided buffer
+    memcpy(buf, &keyboard_state.keyboard_buffer, sizeof(char));
 
     // Flush keyboard buffer
     keyboard_state.keyboard_buffer = '\0';
