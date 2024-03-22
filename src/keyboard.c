@@ -90,3 +90,56 @@ void keyboard_isr(void) {
     // Acknowledge the interrupt
     pic_ack(IRQ_KEYBOARD);
 }
+
+
+// void keyboard_isr(void) {
+//     uint8_t scancode = in(KEYBOARD_DATA_PORT);
+
+//     // Check if the scancode is an extended scancode
+//     if (scancode == EXTENDED_SCANCODE_BYTE) {
+//         // Set the flag to indicate extended mode
+//         keyboard_state.read_extended_mode = true;
+//         return; // Exit ISR, wait for the next byte
+//     } else if (keyboard_state.read_extended_mode) {
+//         // Combine the extended byte with the current scancode
+//         scancode |= EXTENDED_SCANCODE_BYTE;
+//         // Reset the flag
+//         keyboard_state.read_extended_mode = false;
+//     }
+
+//     // Check if keyboard input is on
+//     if (keyboard_state.keyboard_input_on) {
+//         // Process scancode into ASCII character using mapping
+//         char ascii_char = keyboard_scancode_1_to_ascii_map[scancode];
+
+//         // Check for special characters
+//         switch (ascii_char) {
+//             case '\n': // Enter key pressed
+//                 // Handle enter key: Move to next line
+//                 keyboard_state.row += 1;
+//                 keyboard_state.col = 0;
+//                 break;
+//             case '\b': // Backspace key pressed
+//                 // Handle backspace key: Move cursor back and clear previous character
+//                 if (keyboard_state.col > 0) {
+//                     keyboard_state.col -= 1;
+//                     framebuffer_write(keyboard_state.row, keyboard_state.col, ' ', 0xF, 0);
+//                     framebuffer_set_cursor(keyboard_state.row, keyboard_state.col);
+//                 }
+//                 break;
+//             default:
+//                 // Save ASCII character to keyboard buffer
+//                 keyboard_state.keyboard_buffer = ascii_char;
+                
+//                 // Write character to framebuffer
+//                 framebuffer_write(keyboard_state.row, keyboard_state.col, ascii_char, 0xF, 0);
+                
+//                 // Move cursor to next position
+//                 keyboard_state.col += 1;
+//                 framebuffer_set_cursor(keyboard_state.row, keyboard_state.col);
+//         }
+//     }
+
+//     // Acknowledge the interrupt
+//     pic_ack(IRQ_KEYBOARD);
+// }
