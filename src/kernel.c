@@ -6,23 +6,22 @@
 #include "header/interrupt/interrupt.h"
 #include "header/interrupt/idt.h"
 #include "header/driver/keyboard.h"
+#include "header/driver/disk.h"
 
-void kernel_setup(void) {
+void kernel_setup(void)
+{
     load_gdt(&_gdt_gdtr);
     pic_remap();
-    initialize_idt();
     activate_keyboard_interrupt();
+    initialize_idt();
     framebuffer_clear();
+    framebuffer_write(0, 0, ' ', 0xF, 0);
     framebuffer_set_cursor(0, 0);
-    // framebuffer_write(0, 0, 'h',0xf,0x0);
-        
-    int col = 0;
-    keyboard_state_activate();
-    while (true) {
-         char c;
-         get_keyboard_buffer(&c);
-         if (c) framebuffer_write(0, col++, c, 0xF, 0);
-    }
+
+    struct BlockBuffer b;
+    for (int i = 0; i < 512; i++)
+        b.buf[i] = i % 16;
+    write_blocks(&b, 17, 1);
+    while (true)
+        ;
 }
-
-

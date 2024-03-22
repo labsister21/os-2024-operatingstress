@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include "header/stdlib/string.h"
 #include "header/filesystem/fat32.h"
+#include "header/driver/disk.h"
 
 const uint8_t fs_signature[BLOCK_SIZE] = {
     'C',
