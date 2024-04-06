@@ -18,10 +18,69 @@ void kernel_setup(void)
     framebuffer_write(0, 0, ' ', 0xF, 0);
     framebuffer_set_cursor(0, 0);
 
-    struct BlockBuffer b;
-    for (int i = 0; i < 512; i++)
-        b.buf[i] = i % 16;
-    write_blocks(&b, 17, 1);
+    int col = 0;
+    int row = 0;
+    int col_recent = 0;
+    keyboard_state_activate();
     while (true)
-        ;
+    {
+        char c;
+        get_keyboard_buffer(&c);
+        if (c)
+        {
+            if (c == '\b')
+            { // Backspace
+                if (col > 0)
+                {
+                    framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
+                    framebuffer_set_cursor(row, col);
+                }
+                else if (col == 0 && row > 0)
+                {
+                    row--;                                    // Move to the previous row
+                    col = col_recent;                         // Move to the last column of the previous row
+                    framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
+                    framebuffer_set_cursor(row, col);
+                }
+            }
+            else if (c == '\n')
+            { // Enter
+                row++;
+                col_recent = col;
+                col = 0; // Move to the next line
+                framebuffer_set_cursor(row, col);
+            }
+            else if (c == 0)
+            { // Arrow keys
+                // Handle arrow key movements
+                get_keyboard_buffer(&c); // Read the extended scancode byte
+                if (c == EXT_SCANCODE_UP && row > 0)
+                {
+                    row--;
+                    framebuffer_set_cursor(row, col);
+                }
+                else if (c == EXT_SCANCODE_DOWN && row < 25 - 1)
+                {
+                    row++;
+                    framebuffer_set_cursor(row, col);
+                }
+                else if (c == EXT_SCANCODE_LEFT && col > 0)
+                {
+                    col--;
+                    framebuffer_set_cursor(row, col);
+                }
+                else if (c == EXT_SCANCODE_RIGHT && col < 80 - 1)
+                {
+                    col++;
+                    framebuffer_set_cursor(row, col);
+                }
+            }
+            else
+            { // Regular character
+                framebuffer_write(row, col++, c, 0xF, 0);
+                framebuffer_write(row, col, ' ', 0xf, 0);
+                framebuffer_set_cursor(row, col);
+            }
+        }
+    }
 }
