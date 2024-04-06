@@ -14,12 +14,10 @@ void kernel_setup(void) {
     activate_keyboard_interrupt();
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
-    // framebuffer_write(0, 0, 'h',0xf,0x0);
         
     int col = 0;
     int row = 0;
     int col_recent = 0;
-    // int row_recent = 0;
     keyboard_state_activate();
     while (true) {
         char c;
@@ -43,8 +41,6 @@ void kernel_setup(void) {
                 framebuffer_set_cursor(row, col);
             } else { // Regular character
                 framebuffer_write(row, col++, c, 0xF, 0);
-                // row_recent = row;
-                // col_recent = col + 1;
                 framebuffer_write(row, col, ' ', 0xf, 0);
                 framebuffer_set_cursor(row, col);
             }
