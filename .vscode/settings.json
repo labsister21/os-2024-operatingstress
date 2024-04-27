@@ -63,6 +63,12 @@
     "keyboard.h": "c",
     "fat32.h": "c",
     "stddef.h": "c",
-    "disk.h": "c"
+    "disk.h": "c",
+    "paging.h": "c",
+    "stdbool.h": "c",
+    "interrupt.h": "c",
+    "string.h": "c",
+    "framebuffer.h": "c",
+    "kernel-entrypoint.h": "c"
   }
 }
