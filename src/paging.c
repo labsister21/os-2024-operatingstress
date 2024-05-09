@@ -26,6 +26,7 @@ static struct PageManagerState page_manager_state = {
         [1 ... PAGE_FRAME_MAX_COUNT-1] = false
     },
     // TODO: Initialize page manager state properly
+    .free_page_frame_count = PAGE_FRAME_MAX_COUNT,
 };
 
 void update_page_directory_entry(
