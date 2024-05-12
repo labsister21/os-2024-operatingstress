@@ -42,7 +42,11 @@ void pic_remap(void)
 
 void main_interrupt_handler(struct InterruptFrame frame)
 {
-    switch (frame.int_number)
+    if (frame.int_number < 32) {
+        __asm__("hlt");
+    }
+
+    switch (frame.int_number) // kalo di bawah 32, berarti ada exception (error)
     {
     case PIC1_OFFSET + IRQ_KEYBOARD:
         keyboard_isr();
