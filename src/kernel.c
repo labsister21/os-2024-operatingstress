@@ -14,11 +14,11 @@ void kernel_setup(void) {
     pic_remap();
     initialize_idt();
     // activate_keyboard_interrupt();
-    framebuffer_clear();
-    framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
     gdt_install_tss();
     set_tss_register();
+    framebuffer_clear();
+    framebuffer_set_cursor(0, 0);
 
 
     // struct PageDirectory page_directory;
@@ -42,8 +42,10 @@ void kernel_setup(void) {
     // Set TSS $esp pointer and jump into shell 
     set_tss_kernel_current_stack();
     kernel_execute_user_program((uint8_t*) 0);
+    while (true){
 
-    while (true);
+    }
+
 
     // int col = 0;
     // int row = 0;

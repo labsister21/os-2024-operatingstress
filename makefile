@@ -22,7 +22,7 @@ run: all
 all: build
 build: iso
 clean:
-	rm -rf *.o *.iso $(OUTPUT_FOLDER)/kernel
+	rm -rf *.o *.iso $(OUTPUT_FOLDER)/.
 
 
 

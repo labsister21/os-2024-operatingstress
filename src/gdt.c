@@ -17,12 +17,12 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .type_bit          = 0,
             .non_system        = 0,
             .DPL               = 0,
-            .present                 = 0,
+            .present           = 0,
             .limit             = 0,
-            .available               = 0,
-            .long_mode                 = 0,
-            .default_size                = 0,
-            .granularity                 = 0,
+            .available         = 0,
+            .long_mode         = 0,
+            .default_size      = 0,
+            .granularity       = 0,
             .base_high         = 0
         },
         {
@@ -33,12 +33,12 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .type_bit          = 0b1010,
             .non_system        = 1,
             .DPL               = 0,
-            .present                 = 1,
+            .present           = 1,
             .limit             = 0b1111,
-            .available               = 0,
-            .long_mode                 = 1,
-            .default_size                = 1,
-            .granularity                 = 1,
+            .available         = 0,
+            .long_mode         = 1,
+            .default_size      = 1,
+            .granularity       = 1,
             .base_high         = 0
         },
         {
@@ -49,12 +49,12 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .type_bit          = 0b0010,
             .non_system        = 1,
             .DPL               = 0,
-            .present                 = 1,
+            .present           = 1,
             .limit             = 0b1111,
-            .available               = 0,
-            .long_mode                 = 0,
-            .default_size                = 1,
-            .granularity                 = 1,
+            .available         = 0,
+            .long_mode         = 0,
+            .default_size      = 1,
+            .granularity       = 1,
             .base_high         = 0
         },
         {
@@ -65,12 +65,12 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .type_bit          = 0b1010,
             .non_system        = 1,
             .DPL               = 3,
-            .present                 = 1,
+            .present           = 1,
             .limit             = 0b1111,
-            .available               = 0,
-            .long_mode                 = 1,
-            .default_size                = 1,
-            .granularity                 = 1,
+            .available         = 0,
+            .long_mode         = 1,
+            .default_size      = 1,
+            .granularity       = 1,
             .base_high         = 0
         },
         {
@@ -81,7 +81,7 @@ static struct GlobalDescriptorTable global_descriptor_table = {
             .type_bit          = 0b0010,
             .non_system        = 1,
             .DPL               = 3,
-            .present                 = 1,
+            .present           = 1,
             .limit             = 0b1111,
             .available               = 0,
             .long_mode                 = 0,
@@ -123,3 +123,4 @@ void gdt_install_tss(void) {
     global_descriptor_table.table[5].base_mid  = (base & (0xFF << 16)) >> 16;
     global_descriptor_table.table[5].base_low  = base & 0xFFFF;
 }
+
