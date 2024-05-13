@@ -69,6 +69,7 @@
     "interrupt.h": "c",
     "string.h": "c",
     "framebuffer.h": "c",
-    "kernel-entrypoint.h": "c"
+    "kernel-entrypoint.h": "c",
+    "idt.h": "c"
   }
 }

@@ -9,7 +9,8 @@
 #include "header/filesystem/fat32.h"
 #include "header/memory/paging.h"
 
-void kernel_setup(void) {
+void kernel_setup(void)
+{
     load_gdt(&_gdt_gdtr);
     pic_remap();
     initialize_idt();
@@ -20,32 +21,29 @@ void kernel_setup(void) {
     framebuffer_clear();
     framebuffer_set_cursor(0, 0);
 
-
     // struct PageDirectory page_directory;
-    // void *virtual_address = (void *)0x12345678; 
+    // void *virtual_address = (void *)0x12345678;
     // paging_allocate_user_page_frame(&page_directory, virtual_address);
-   
-   
+
     // Allocate first 4 MiB virtual memory
-    paging_allocate_user_page_frame(&_paging_kernel_page_directory, (uint8_t*) 0);
+    paging_allocate_user_page_frame(&_paging_kernel_page_directory, (uint8_t *)0);
 
     // Write shell into memory
     struct FAT32DriverRequest request = {
-        .buf                   = (uint8_t*) 0,
-        .name                  = "shell",
-        .ext                   = "\0\0\0",
+        .buf = (uint8_t *)0,
+        .name = "shell",
+        .ext = "\0\0\0",
         .parent_cluster_number = ROOT_CLUSTER_NUMBER,
-        .buffer_size           = 0x100000,
+        .buffer_size = 0x100000,
     };
     read(request);
 
-    // Set TSS $esp pointer and jump into shell 
+    // Set TSS $esp pointer and jump into shell
     set_tss_kernel_current_stack();
-    kernel_execute_user_program((uint8_t*) 0);
-    while (true){
+    kernel_execute_user_program((uint8_t *)0);
 
-    }
-
+    while (true)
+        ;
 
     // int col = 0;
     // int row = 0;
@@ -67,7 +65,7 @@ void kernel_setup(void) {
     //                 framebuffer_set_cursor(row, col);
     //             }
     //         } else if (c == '\n') { // Enter
-    //             row++; 
+    //             row++;
     //             col_recent = col;
     //             col = 0; // Move to the next line
     //             framebuffer_set_cursor(row, col);

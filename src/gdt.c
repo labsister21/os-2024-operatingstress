@@ -11,83 +11,83 @@ static struct GlobalDescriptorTable global_descriptor_table = {
     .table = {
         {
             // NULL DESCRIPTOR
-            .segment_low       = 0,
-            .base_low          = 0,
-            .base_mid          = 0,
-            .type_bit          = 0,
-            .non_system        = 0,
-            .DPL               = 0,
-            .present           = 0,
-            .limit             = 0,
-            .available         = 0,
-            .long_mode         = 0,
-            .default_size      = 0,
-            .granularity       = 0,
-            .base_high         = 0
+            .segment_low = 0,
+            .base_low = 0,
+            .base_mid = 0,
+            .type_bit = 0,
+            .non_system = 0
         },
         {
             // KERNEL CODE
-            .segment_low       = 0xFFFF,
-            .base_low          = 0,
-            .base_mid          = 0,
-            .type_bit          = 0b1010,
-            .non_system        = 1,
-            .DPL               = 0,
-            .present           = 1,
-            .limit             = 0b1111,
-            .available         = 0,
-            .long_mode         = 1,
-            .default_size      = 1,
-            .granularity       = 1,
-            .base_high         = 0
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid = 0,
+            .type_bit = 0xA,
+            .non_system = 1,
+            // .segment_mid = 0xFF,
+            // .type = 0x8,
+            // .s = 1,
+            .DPL = 0,
+            .present = 1,
+            .limit = 0xF,
+            .available = 1,
+            .long_mode = 1,
+            .default_size = 1,
+            .granularity = 1,
+            .base_high = 0
         },
         {
             // KERNEL DATA
-            .segment_low       = 0xFFFF,
-            .base_low          = 0,
-            .base_mid          = 0,
-            .type_bit          = 0b0010,
-            .non_system        = 1,
-            .DPL               = 0,
-            .present           = 1,
-            .limit             = 0b1111,
-            .available         = 0,
-            .long_mode         = 0,
-            .default_size      = 1,
-            .granularity       = 1,
-            .base_high         = 0
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid = 0,
+            .type_bit = 0x2,
+            .non_system = 1,
+            // .segment_mid = 0xFF,
+            // .type = 0x2,
+            // .s = 1,
+            .DPL = 0,
+            .present = 1,
+            .limit = 0xF,
+            .available = 1,
+            .long_mode = 0,
+            .default_size = 1,
+            .granularity = 1,
+            .base_high = 0
         },
         {
             // USER MODE CODE
-            .segment_low       = 0xFFFF,
-            .base_low          = 0,
-            .base_mid          = 0,
-            .type_bit          = 0b1010,
-            .non_system        = 1,
-            .DPL               = 3,
-            .present           = 1,
-            .limit             = 0b1111,
-            .available         = 0,
-            .long_mode         = 1,
-            .default_size      = 1,
-            .granularity       = 1,
-            .base_high         = 0
+            // TO DO: IMPLEMENT
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid = 0,
+            .type_bit = 0xA,
+            .non_system = 1,
+            .DPL = 3,           // Privilege Level
+            .present = 1,
+            .limit = 0xF,
+            .available = 1,
+            .long_mode = 1,
+            .default_size = 1,
+            .granularity = 1,
+            .base_high = 0
         },
         {
             // USER MODE DATA
-            .segment_low       = 0xFFFF,
-            .base_low          = 0,
-            .base_mid          = 0,
-            .type_bit          = 0b0010,
-            .non_system        = 1,
-            .DPL               = 3,
-            .present           = 1,
-            .limit             = 0b1111,
-            .available               = 0,
-            .long_mode                 = 0,
-            .default_size                = 1,
-            .granularity                 = 1,
-            .base_high         = 0
+            // TO DO: IMPLEMENT
+            .segment_low = 0xFFFF,
+            .base_low = 0,
+            .base_mid = 0,
+            .type_bit = 0x2,
+            .non_system = 1,
+            .DPL = 3,           // Privilege Level
+            .present = 1,
+            .limit = 0xF,
+            .available = 1,
+            .long_mode = 0,
+            .default_size = 1,
+            .granularity = 1,
+            .base_high = 0
         },
         {
             .limit             = (sizeof(struct TSSEntry) & (0xF << 16)) >> 16,
@@ -123,4 +123,3 @@ void gdt_install_tss(void) {
     global_descriptor_table.table[5].base_mid  = (base & (0xFF << 16)) >> 16;
     global_descriptor_table.table[5].base_low  = base & 0xFFFF;
 }
-

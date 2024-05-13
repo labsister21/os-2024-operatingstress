@@ -2,7 +2,6 @@
 #include "header/cpu/portio.h"
 #include "header/cpu/gdt.h"
 
-
 void io_wait(void)
 {
     out(0x80, 0);
@@ -43,7 +42,12 @@ void pic_remap(void)
 
 void main_interrupt_handler(struct InterruptFrame frame)
 {
-    switch (frame.int_number)
+    if (frame.int_number < 32)
+    {
+        __asm__("hlt");
+    }
+
+    switch (frame.int_number) // kalo di bawah 32, berarti ada exception (error)
     {
     case PIC1_OFFSET + IRQ_KEYBOARD:
         keyboard_isr();
@@ -51,7 +55,8 @@ void main_interrupt_handler(struct InterruptFrame frame)
     }
 }
 
-void activate_keyboard_interrupt(void) {
+void activate_keyboard_interrupt(void)
+{
     out(PIC1_DATA, in(PIC1_DATA) & ~(1 << IRQ_KEYBOARD));
 }
 
@@ -62,13 +67,88 @@ void activate_keyboard_interrupt(void) {
 // }
 
 struct TSSEntry _interrupt_tss_entry = {
-    .ss0  = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
+    .ss0 = GDT_KERNEL_DATA_SEGMENT_SELECTOR,
 };
 
-void set_tss_kernel_current_stack(void) {
+void set_tss_kernel_current_stack(void)
+{
     uint32_t stack_ptr;
     // Reading base stack frame instead esp
-    __asm__ volatile ("mov %%ebp, %0": "=r"(stack_ptr) : /* <Empty> */);
+    __asm__ volatile("mov %%ebp, %0" : "=r"(stack_ptr) : /* <Empty> */);
     // Add 8 because 4 for ret address and other 4 is for stack_ptr variable
-    _interrupt_tss_entry.esp0 = stack_ptr + 8; 
+    _interrupt_tss_entry.esp0 = stack_ptr + 8;
+}
+
+uint8_t row_now = 0;
+uint8_t length_of_terminal = 0;
+void puts(char *str, uint32_t len, uint32_t color)
+{
+    if (memcmp(str, "cls", 3) == 0)
+    {
+        row_now = 0;
+        for (uint32_t i = 0; i < 25; i++)
+        {
+            for (uint32_t j = 0; j < 80; j++)
+            {
+                framebuffer_write(i, j, ' ', color, 0);
+            }
+        }
+    }
+    else
+    {
+        row_now++;
+        uint32_t col = 0;
+        for (uint32_t i = 0; i < len; i++)
+        {
+            if (str[i] == '\n')
+            {
+                row_now++;
+                col = 0;
+            }
+            else
+            {
+                framebuffer_write(row_now, col, str[i], color, 0);
+                col++;
+            }
+        }
+        row_now++;
+    }
+}
+
+void syscall(struct InterruptFrame frame)
+{
+    switch (frame.cpu.general.eax)
+    {
+    case 0:
+        *((int8_t *)frame.cpu.general.ecx) = read(
+            *(struct FAT32DriverRequest *)frame.cpu.general.ebx);
+        break;
+    case 1:
+        *((int8_t *)frame.cpu.general.ecx) = read_directory(
+            *(struct FAT32DriverRequest *)frame.cpu.general.ebx);
+        break;
+    case 2:
+        *((int8_t *)frame.cpu.general.ecx) = write(
+            *(struct FAT32DriverRequest *)frame.cpu.general.ebx);
+        break;
+    case 3:
+        *((int8_t *)frame.cpu.general.ecx) = delete (
+            *(struct FAT32DriverRequest *)frame.cpu.general.ebx);
+        break;
+    case 4:
+        get_keyboard_buffer((char *)frame.cpu.general.ebx);
+        break;
+    case 5:
+        puts((char *)frame.cpu.general.ebx, frame.cpu.general.ecx, frame.cpu.general.edx);
+        break;
+    case 6:
+        puts(
+            (char *)frame.cpu.general.ebx,
+            frame.cpu.general.ecx,
+            frame.cpu.general.edx); // Assuming puts() exist in kernel
+        break;
+    case 7:
+        keyboard_state_activate();
+        break;
+    }
 }
