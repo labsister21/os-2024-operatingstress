@@ -115,6 +115,12 @@ void puts(char *str, uint32_t len, uint32_t color)
     }
 }
 
+void putchar(char str, uint32_t color)
+{
+    int size = sizeof(str);
+    puts(&str, size, color);
+}
+
 void syscall(struct InterruptFrame frame)
 {
     switch (frame.cpu.general.eax)
@@ -139,7 +145,7 @@ void syscall(struct InterruptFrame frame)
         get_keyboard_buffer((char *)frame.cpu.general.ebx);
         break;
     case 5:
-        puts((char *)frame.cpu.general.ebx, frame.cpu.general.ecx, frame.cpu.general.edx);
+        putchar(frame.cpu.general.ebx, frame.cpu.general.ecx);
         break;
     case 6:
         puts(

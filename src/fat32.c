@@ -141,7 +141,7 @@ void write_clusters(const void *ptr, uint32_t cluster_number, uint8_t cluster_co
 
 void init_directory_table(struct FAT32DirectoryTable *dir_table, char *name, uint32_t parent_dir_cluster)
 {
-    //Baru tulis di ram tapi belum dicluster
+    // Baru tulis di ram tapi belum dicluster
     dir_table->table[0].cluster_high = (uint16_t)(parent_dir_cluster >> 16);
     dir_table->table[0].cluster_low = (uint16_t)(parent_dir_cluster & 0xFFFF);
 
@@ -250,7 +250,6 @@ int8_t write(struct FAT32DriverRequest request)
         return 2;
     }
 
-
     read_clusters(&fat32_driver_state.dir_table_buf, request.parent_cluster_number, 1);
 
     struct FAT32DirectoryEntry *table = fat32_driver_state.dir_table_buf.table;
@@ -267,9 +266,9 @@ int8_t write(struct FAT32DriverRequest request)
     //
 
     for (uint8_t i = 2; i < CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry); i++)
-        
-    {   
-        
+
+    {
+
         if (table[i].user_attribute != UATTR_NOT_EMPTY)
         {
             // cari tempat kosong pertama
@@ -315,13 +314,13 @@ int8_t write(struct FAT32DriverRequest request)
         table[directory_location].attribute = 1;
         init_directory_table(request.buf, request.name, locations[0]);
 
-        //Tulis judul folder dan "kuasai" cluster di storage
+        // Tulis judul folder dan "kuasai" cluster di storage
         write_clusters(request.buf, locations[0], 1);
 
-        //Tandai RAM bahwa cluster sudah dikuasai
+        // Tandai RAM bahwa cluster sudah dikuasai
         fat32_driver_state.fat_table.cluster_map[locations[0]] = FAT32_FAT_END_OF_FILE;
 
-        //Salin RAM (fat table) ke storage
+        // Salin RAM (fat table) ke storage
         write_clusters(&fat32_driver_state.fat_table, 1, 1);
     }
     else
@@ -334,26 +333,25 @@ int8_t write(struct FAT32DriverRequest request)
         // tulis ke dalam buffer filenya
         for (uint16_t i = 0; i < cluster_count; i++)
         {
-            //Tulis per-cluster ke storage
+            // Tulis per-cluster ke storage
             write_clusters(request.buf + i * CLUSTER_SIZE, locations[i], 1);
-            
+
             if (i == cluster_count - 1)
             {
-                //Simpan catatan fat table ke "RAM"
+                // Simpan catatan fat table ke "RAM"
                 fat32_driver_state.fat_table.cluster_map[locations[i]] = FAT32_FAT_END_OF_FILE;
             }
             else
             {
-                //simpan catatan fat table ke "RAM"
+                // simpan catatan fat table ke "RAM"
                 fat32_driver_state.fat_table.cluster_map[locations[i]] = locations[i + 1];
             }
         }
 
         // Salin fat table di RAM ke storage
         write_clusters(&fat32_driver_state.fat_table, 1, 1);
-        
     }
- 
+
     // Salin nama file/folder di bawah nama folder parentnya (di storage)
     write_clusters(table, request.parent_cluster_number, 1);
 
