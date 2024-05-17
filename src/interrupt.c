@@ -127,7 +127,9 @@ void puts(char *str, uint32_t len, uint32_t color)
 void putchar(char str, uint32_t color)
 {
     int size = sizeof(str);
-    puts(&str, size, color);
+    if (!memcmp(&str, "\0", 1)) {
+        puts(&str, size, color);
+    }
 }
 
 void syscall(struct InterruptFrame frame)
