@@ -52,11 +52,7 @@ void flush_single_tlb(void *virtual_addr) {
 bool paging_allocate_check(uint32_t amount) {
     // TODO: Check whether requested amount is available
 
-    // Hitung jumlah halaman yang diperlukan untuk jumlah memori yang diminta
-    uint32_t required_pages = (amount + PAGE_FRAME_SIZE - 1) / PAGE_FRAME_SIZE;
-
-    // Periksa apakah ada cukup banyak halaman kosong
-    return page_manager_state.free_page_frame_count >= required_pages;
+    return amount <= page_manager_state.free_page_frame_count;
 }
 
 
@@ -73,22 +69,20 @@ bool paging_allocate_user_page_frame(struct PageDirectory *page_dir, void *virtu
      */ 
 
     // Find a free physical frame
-    uint32_t frame_index;
-    for (frame_index = 0; frame_index < PAGE_FRAME_MAX_COUNT; ++frame_index) {
-        if (!page_manager_state.page_frame_map[frame_index]) {
-            // Mark the physical frame as used
-            page_manager_state.page_frame_map[frame_index] = true;
-            page_manager_state.free_page_frame_count--;
+    uint32_t physical_addr = (uint32_t)page_manager_state.free_page_frame_count;
+    
+    if (paging_allocate_check(physical_addr))
+    {
+        struct PageDirectoryEntryFlag flag = {
+            .present_bit = 1,
+            .write_bit = 1,
+            .user_supervisor_bit = 1,
+            .use_pagesize_4_mb = 1,
+        };
 
-            // Map the virtual frame to the physical frame in the page directory
-            uint32_t page_index = ((uint32_t) virtual_addr >> 22) & 0x3FF;
-            page_dir->table[page_index].flag.present_bit       = 1;
-            page_dir->table[page_index].flag.write_bit         = 1;
-            page_dir->table[page_index].flag.use_pagesize_4_mb = 1;
-            page_dir->table[page_index].lower_address          = frame_index;
-
-            return true; // Allocation successful
-        }
+        update_page_directory_entry(page_dir, (uint32_t *)physical_addr, virtual_addr, flag);
+        page_manager_state.page_frame_map[PAGE_FRAME_MAX_COUNT - page_manager_state.free_page_frame_count] = true;
+        page_manager_state.free_page_frame_count -= 1;
     }
 
     return false; // No free frame available
@@ -104,23 +98,19 @@ bool paging_free_user_page_frame(struct PageDirectory *page_dir, void *virtual_a
     // Hitung indeks halaman dari alamat virtual
     uint32_t page_index = ((uint32_t) virtual_addr >> 22) & 0x3FF;
 
-    // Dapatkan alamat fisik yang terkait dengan halaman virtual
-    void *physical_addr = (void *)((page_dir->table[page_index].lower_address << 22) | ((uint32_t) virtual_addr & 0x3FFFFF));
+        struct PageDirectoryEntryFlag flag = {
+        .present_bit = 0,
+        .write_bit = 0,
+        .user_supervisor_bit = 0,
+        .use_pagesize_4_mb = 0,
+    };
 
-    // Hitung indeks halaman fisik
-    uint32_t frame_index = (uint32_t) physical_addr / PAGE_FRAME_SIZE;
+    page_dir->table[page_index].flag = flag;
+    page_dir->table[page_index].lower_address = 0;
 
-    // Pastikan halaman fisik yang tersedia
-    if (page_manager_state.page_frame_map[frame_index]) {
-        // Hapus tanda halaman fisik sebagai digunakan
-        page_manager_state.page_frame_map[frame_index] = false;
-        page_manager_state.free_page_frame_count++;
-
-        // Hapus entri dalam direktori halaman
-        page_dir->table[page_index].flag.present_bit = 0;
+    uint32_t last_pageframe_used = PAGE_FRAME_MAX_COUNT - page_manager_state.free_page_frame_count;
+    page_manager_state.page_frame_map[last_pageframe_used] = false;
+    page_manager_state.free_page_frame_count += 1;
 
         return true;
-    }
-
-    return false; // Halaman tidak ditemukan
 }

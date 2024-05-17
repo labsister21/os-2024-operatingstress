@@ -24,8 +24,8 @@ align 4             ; the code must be 4 byte aligned
     dd CHECKSUM     ; and the checksum
 
 
- 
-section .setup.text ; start of the text (code) section
+; start of the text (code) section
+section .setup.text 
 loader equ (loader_entrypoint - KERNEL_VIRTUAL_BASE)
 loader_entrypoint:         ; the loader label (defined as entry point in linker script)
     ; Set CR3 (CPU page register)

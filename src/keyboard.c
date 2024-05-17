@@ -4,6 +4,12 @@
 #include "header/cpu/portio.h"
 #include "header/stdlib/string.h"
 
+static bool is_capslock = false;
+
+int col = 0;
+int row = 0;
+int col_recent = 0;
+
 const char keyboard_scancode_1_to_ascii_map[256] = {
       0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
     'q',  'w', 'e', 'r', 't', 'y', 'u', 'i',  'o', 'p', '[',  ']', '\n',   0,  'a',  's',
@@ -24,7 +30,33 @@ const char keyboard_scancode_1_to_ascii_map[256] = {
       0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
 };
 
-static struct KeyboardDriverState keyboard_state = {false, false, 0};
+const char keyboard_scancode_1_to_ascii_capslock[256] = {
+      0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
+    'Q',  'W', 'E', 'R', 'T', 'Y', 'U', 'I',  'O', 'P', '[',  ']', '\n',   0,  'A',  'S',
+    'D',  'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', '`',   0, '\\',  'Z', 'X',  'C',  'V',
+    'B',  'N', 'M', ',', '.', '/',   0, '*',    0, ' ',   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0, '-',    0,    0,   0,  '+',    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+      0,    0,   0,   0,   0,   0,   0,   0,    0,   0,   0,    0,    0,   0,    0,    0,
+};
+
+
+static struct KeyboardDriverState keyboard_state = {
+    .read_extended_mode = false,
+    .keyboard_input_on = false,
+    .keyboard_buffer = {'\0'},
+    .buffer_index = 0,
+};
 
 // Activate keyboard ISR / start listen keyboard & save to buffer
 void keyboard_state_activate(void) {
@@ -42,7 +74,16 @@ void get_keyboard_buffer(char *buf) {
     memcpy(buf, &keyboard_state.keyboard_buffer, sizeof(char));
 
     // Flush keyboard buffer
-    keyboard_state.keyboard_buffer = '\0';
+    // keyboard_state.keyboard_buffer = '\0';
+}
+
+const char* get_scancode_to_ascii_map() {
+    if (is_capslock) {
+        return keyboard_scancode_1_to_ascii_capslock;
+    }
+    else {
+        return keyboard_scancode_1_to_ascii_map;
+    }
 }
 
 /* -- Keyboard Interrupt Service Routine -- */
@@ -53,29 +94,44 @@ void get_keyboard_buffer(char *buf) {
  */
 void keyboard_isr(void) {
     uint8_t scancode = in(KEYBOARD_DATA_PORT);
-    // TODO : Implement scancode processing
+    
+    // Handle capslock
+    if (scancode == 0x3A) {
+        is_capslock = !is_capslock;
+        pic_ack(IRQ_KEYBOARD);
+        return;
+    } 
 
-    // Check if the scancode is an extended scancode
-    if (scancode == EXTENDED_SCANCODE_BYTE) {
-        // Set the flag to indicate extended mode
-        keyboard_state.read_extended_mode = true;
-        return; // Exit ISR, wait for the next byte
-    } else if (keyboard_state.read_extended_mode) {
-        // Combine the extended byte with the current scancode
-        scancode |= EXTENDED_SCANCODE_BYTE;
-        // Reset the flag
-        keyboard_state.read_extended_mode = false;
+    if (!keyboard_state.keyboard_input_on) {
+        keyboard_state.buffer_index = 0;
+    } else {
+        uint8_t scancode = in(KEYBOARD_DATA_PORT);
+        char ascii_char = get_scancode_to_ascii_map()[scancode];
+
+        if (ascii_char != 0) {
+            if (ascii_char == '\b') { // Backspace
+                if (col > 0) {
+                    framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
+                    framebuffer_set_cursor(row, col);
+                }
+                else if (col == 0 && row > 0) {
+                    row--; // Move to the previous row
+                    col = col_recent; // Move to the last column of the previous row
+                    framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
+                    framebuffer_set_cursor(row, col);
+                }
+            } else if (ascii_char == '\n') { // Enter
+                row++;
+                col_recent = col;
+                col = 0; // Move to the next line
+                framebuffer_set_cursor(row, col);
+            } else { // Regular character
+                framebuffer_write(row, col++, ascii_char, 0xF, 0);
+                framebuffer_write(row, col, ' ', 0xf, 0);
+                framebuffer_set_cursor(row, col);
+            }
+        }
     }
-
-    // Check if keyboard input is on
-    if (keyboard_state.keyboard_input_on) {
-        // Process scancode into ASCII character using mapping
-        char ascii_char = keyboard_scancode_1_to_ascii_map[scancode];
-
-        // Save ASCII character to keyboard buffer
-        keyboard_state.keyboard_buffer = ascii_char;
-    }
-
     // Acknowledge the interrupt
     pic_ack(IRQ_KEYBOARD);
 }

@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-
 // Some GDT Constant
 #define GDT_MAX_ENTRY_COUNT 32
 /**

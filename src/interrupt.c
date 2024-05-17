@@ -2,6 +2,8 @@
 #include "header/cpu/portio.h"
 #include "header/cpu/gdt.h"
 
+void syscall(struct InterruptFrame frame);
+
 void io_wait(void)
 {
     out(0x80, 0);
@@ -51,6 +53,13 @@ void main_interrupt_handler(struct InterruptFrame frame)
     {
     case PIC1_OFFSET + IRQ_KEYBOARD:
         keyboard_isr();
+        break;
+        
+    case 0x30:
+        syscall(frame);
+        break;
+
+    default:
         break;
     }
 }
@@ -115,6 +124,14 @@ void puts(char *str, uint32_t len, uint32_t color)
     }
 }
 
+void putchar(char str, uint32_t color)
+{
+    int size = sizeof(str);
+    if (!memcmp(&str, "\0", 1)) {
+        puts(&str, size, color);
+    }
+}
+
 void syscall(struct InterruptFrame frame)
 {
     switch (frame.cpu.general.eax)
@@ -139,7 +156,7 @@ void syscall(struct InterruptFrame frame)
         get_keyboard_buffer((char *)frame.cpu.general.ebx);
         break;
     case 5:
-        puts((char *)frame.cpu.general.ebx, frame.cpu.general.ecx, frame.cpu.general.edx);
+            putchar(frame.cpu.general.ebx, frame.cpu.general.ecx);
         break;
     case 6:
         puts(

@@ -14,12 +14,12 @@ void kernel_setup(void)
     load_gdt(&_gdt_gdtr);
     pic_remap();
     initialize_idt();
-    // activate_keyboard_interrupt();
+    activate_keyboard_interrupt();
+    framebuffer_clear();
+    framebuffer_set_cursor(0, 0);
     initialize_filesystem_fat32();
     gdt_install_tss();
     set_tss_register();
-    framebuffer_clear();
-    framebuffer_set_cursor(0, 0);
 
     // struct PageDirectory page_directory;
     // void *virtual_address = (void *)0x12345678;

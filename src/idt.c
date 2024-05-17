@@ -18,13 +18,13 @@ void initialize_idt(void)
      * Segment: GDT_KERNEL_CODE_SEGMENT_SELECTOR
      * Privilege: 0
      */
+    __asm__ volatile("lidt %0" : : "m"(_idt_idtr));
+    __asm__ volatile("sti");
     for (int i = 0; isr_stub_table[i] != NULL; i++)
     {
         uint8_t privilege = i < 0x30 || i > 0x3F ? 0 : 0x3;
         set_interrupt_gate(i, isr_stub_table[i], GDT_KERNEL_CODE_SEGMENT_SELECTOR, privilege);
     }
-    __asm__ volatile("lidt %0" : : "m"(_idt_idtr));
-    __asm__ volatile("sti");
 }
 
 void set_interrupt_gate(
