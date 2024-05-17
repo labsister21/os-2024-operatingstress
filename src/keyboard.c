@@ -86,6 +86,10 @@ const char* get_scancode_to_ascii_map() {
     }
 }
 
+bool is_keyboard_blocking(void) {
+    return keyboard_state.keyboard_input_on;
+}
+
 /* -- Keyboard Interrupt Service Routine -- */
 
 /**
@@ -134,4 +138,26 @@ void keyboard_isr(void) {
     }
     // Acknowledge the interrupt
     pic_ack(IRQ_KEYBOARD);
+}
+
+void puts(char *buf, uint32_t len, uint32_t color) {
+    for (uint8_t i = 0; i < len; i++) {
+        framebuffer_set_cursor(row, col + i);
+        if (buf[i] == '\n') {
+            row++;
+            col = 0;
+            framebuffer_set_cursor(row, col);
+        } else {
+            framebuffer_write(row, col + i, buf[i], color, 0);
+            if(i == len - 1) {
+                col = col + len;
+            }
+        }
+        col_recent = col;
+  }
+    // for (uint32_t i = 0; i < len; i++)
+    // {
+    //     framebuffer_write(row, col + i, buf[i], color, 0);
+    // }
+    // col = col + len;
 }
