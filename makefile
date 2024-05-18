@@ -19,8 +19,8 @@ DISK_LOAD	  = -drive file=bin/storage.bin,format=raw,if=ide,index=0,media=disk -
 
 run: all
 	@qemu-system-i386 -s $(DISK_LOAD) $(OUTPUT_FOLDER)/$(ISO_NAME).iso
-all: build
-build: iso
+all: build 
+build: disk iso insert-shell
 clean:
 	rm -rf *.o *.iso $(OUTPUT_FOLDER)/kernel
 

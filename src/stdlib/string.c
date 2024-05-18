@@ -58,4 +58,13 @@ int strlen(char *str)
     while (str[len] != '\0')
         len++;
     return len;
+
+}
+
+size_t len(char *str){
+    size_t len = 0;
+    while (str[len] != '\0')
+        len++;
+    return len;
+
 }
