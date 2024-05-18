@@ -133,6 +133,7 @@ void keyboard_isr(void) {
                 col_recent = col;
                 col = 0; // Move to the next line
                 framebuffer_set_cursor(row, col_bound);
+                keyboard_state_deactivate();
             } else { // Regular character
                 framebuffer_write(row, col++, ascii_char, 0xF, 0);
                 framebuffer_write(row, col, ' ', 0xf, 0);
