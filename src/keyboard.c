@@ -580,6 +580,10 @@ bool is_keyboard_blocking(void)
 
 int8_t terminal_length = 0;
 
+void set_terminal_length(uint8_t len){
+    terminal_length = len;
+}
+
 /* -- Keyboard Interrupt Service Routine -- */
 
 /**
@@ -587,7 +591,8 @@ int8_t terminal_length = 0;
  * Will start listen and process keyboard scancode if keyboard_input_on.
  */
 void keyboard_isr(void)
-{
+{   
+
     uint8_t scancode = in(KEYBOARD_DATA_PORT);
 
     // Handle capslock
@@ -606,9 +611,10 @@ void keyboard_isr(void)
     {
         uint8_t scancode = in(KEYBOARD_DATA_PORT);
         char mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
+    
         if (mapped_char == '\b')
         {
-            if (col >= terminal_length + 1)
+            if ((col >= terminal_length + 1) && (keyboard_state.buffer_index != 0))
             {
                 backspace_pressed = true;
                 framebuffer_write(row, col - 1, ' ', 0x0F, 0x00);
