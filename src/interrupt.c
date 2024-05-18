@@ -1,6 +1,14 @@
 #include "header/interrupt/interrupt.h"
 #include "header/cpu/portio.h"
 #include "header/cpu/gdt.h"
+#include "header/text/framebuffer.h"
+#include "header/driver/keyboard.h"
+
+uint8_t curr_row = 0;
+uint8_t curr_col = 0;
+uint8_t length_of_terminal = 0;
+
+void syscall(struct InterruptFrame frame);
 
 void syscall(struct InterruptFrame frame);
 
@@ -54,7 +62,7 @@ void main_interrupt_handler(struct InterruptFrame frame)
     case PIC1_OFFSET + IRQ_KEYBOARD:
         keyboard_isr();
         break;
-        
+
     case 0x30:
         syscall(frame);
         break;
@@ -88,49 +96,49 @@ void set_tss_kernel_current_stack(void)
     _interrupt_tss_entry.esp0 = stack_ptr + 8;
 }
 
-uint8_t row_now = 0;
-uint8_t length_of_terminal = 0;
-void puts(char *str, uint32_t len, uint32_t color)
-{
-    if (memcmp(str, "cls", 3) == 0)
-    {
-        row_now = 0;
-        for (uint32_t i = 0; i < 25; i++)
-        {
-            for (uint32_t j = 0; j < 80; j++)
-            {
-                framebuffer_write(i, j, ' ', color, 0);
-            }
-        }
-    }
-    else
-    {
-        row_now++;
-        uint32_t col = 0;
-        for (uint32_t i = 0; i < len; i++)
-        {
-            if (str[i] == '\n')
-            {
-                row_now++;
-                col = 0;
-            }
-            else
-            {
-                framebuffer_write(row_now, col, str[i], color, 0);
-                col++;
-            }
-        }
-        row_now++;
-    }
-}
+// void puts(char *str, uint32_t len, uint32_t color)
+// {
+//     if (memcmp(str, "cls", 3) == 0)
+//     {
+//         curr_row = 0;
+//         for (uint32_t i = 0; i < 25; i++)
+//         {
+//             for (uint32_t j = 0; j < 80; j++)
+//             {
+//                 framebuffer_write(i, j, ' ', color, 0);
+//             }
+//         }
+//     }
+//     else
+//     {
+//         curr_row++;
+//         uint32_t col = 0;
+//         for (uint32_t i = 0; i < len; i++)
+//         {
+//             if (str[i] == '\n')
+//             {
+//                 curr_row++;
+//                 col = 0;
+//             }
+//             else
+//             {
+//                 framebuffer_write(curr_row, col, str[i], color, 0);
+//                 col++;
+//             }
+//         }
+//         curr_row++;
+//     }
+// }
 
 void putchar(char str, uint32_t color)
 {
     int size = sizeof(str);
-    if (!memcmp(&str, "\0", 1)) {
+    if (!memcmp(&str, "\0", 1))
+    {
         puts(&str, size, color);
     }
 }
+
 
 void syscall(struct InterruptFrame frame)
 {
@@ -153,10 +161,16 @@ void syscall(struct InterruptFrame frame)
             *(struct FAT32DriverRequest *)frame.cpu.general.ebx);
         break;
     case 4:
-        get_keyboard_buffer((char *)frame.cpu.general.ebx);
+        keyboard_state_activate();
+        __asm__("sti");
+        while (is_keyboard_blocking())
+            ;
+        char buffer[KEYBOARD_BUFFER_SIZE];
+        get_keyboard_buffer(buffer);
+        memcpy((char *)frame.cpu.general.ebx, buffer, KEYBOARD_BUFFER_SIZE);
         break;
     case 5:
-            putchar(frame.cpu.general.ebx, frame.cpu.general.ecx);
+        putchar(frame.cpu.general.ebx, frame.cpu.general.edx);
         break;
     case 6:
         puts(

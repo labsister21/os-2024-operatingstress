@@ -266,9 +266,9 @@ int8_t write(struct FAT32DriverRequest request)
     //
 
     for (uint8_t i = 2; i < CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry); i++)
-        
-    {   
-        
+
+    {
+
         if (table[i].user_attribute != UATTR_NOT_EMPTY)
         {
             // cari tempat kosong pertama
@@ -335,7 +335,7 @@ int8_t write(struct FAT32DriverRequest request)
         {
             // Tulis per-cluster ke storage
             write_clusters(request.buf + i * CLUSTER_SIZE, locations[i], 1);
-            
+
             if (i == cluster_count - 1)
             {
                 // Simpan catatan fat table ke "RAM"
@@ -351,7 +351,7 @@ int8_t write(struct FAT32DriverRequest request)
         // Salin fat table di RAM ke storage
         write_clusters(&fat32_driver_state.fat_table, 1, 1);
     }
- 
+
     // Salin nama file/folder di bawah nama folder parentnya (di storage)
     write_clusters(table, request.parent_cluster_number, 1);
 

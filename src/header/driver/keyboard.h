@@ -15,6 +15,8 @@
 #define EXTENDED_SCANCODE_BYTE 0xE0
 #define KEYBOARD_BUFFER_SIZE 256
 
+#define KEYBOARD_BUFFER_SIZE 256
+
 /**
  * keyboard_scancode_1_to_ascii_map[256], Convert scancode values that correspond to ASCII printables
  * How to use this array: ascii_char = k[scancode]
@@ -52,6 +54,8 @@ void keyboard_state_deactivate(void);
 // Get keyboard buffer value and flush the buffer - @param buf Pointer to char buffer
 void get_keyboard_buffer(char *buf);
 
+bool is_keyboard_blocking(void);
+
 /* -- Keyboard Interrupt Service Routine -- */
 
 /**
@@ -60,4 +64,8 @@ void get_keyboard_buffer(char *buf);
  */
 void keyboard_isr(void);
 
+
+void puts(char *buf, uint32_t len, uint32_t color);
+
 #endif
+
