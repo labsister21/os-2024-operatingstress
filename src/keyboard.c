@@ -62,6 +62,8 @@ static struct KeyboardDriverState keyboard_state = {
 // Activate keyboard ISR / start listen keyboard & save to buffer
 void keyboard_state_activate(void) {
     keyboard_state.keyboard_input_on = true;
+    keyboard_state.buffer_index = 0;
+    memset(keyboard_state.keyboard_buffer, 0, KEYBOARD_BUFFER_SIZE);
 }
 
 // Deactivate keyboard ISR / stop listening keyboard interrupt
@@ -72,7 +74,19 @@ void keyboard_state_deactivate(void) {
 // Get keyboard buffer value and flush the buffer - @param buf Pointer to char buffer
 void get_keyboard_buffer(char *buf) {
         // Copy keyboard buffer value to provided buffer
-    memcpy(buf, &keyboard_state.keyboard_buffer, sizeof(char));
+    // memcpy(buf, &keyboard_state.keyboard_buffer, sizeof(keyboard_state.buffer_index));
+
+    memcpy(buf, &keyboard_state.keyboard_buffer, 120);
+
+    // memcpy(buf, &keyboard_state.keyboard_buffer, KEYBOARD_BUFFER_SIZE);
+
+    // memcpy(buf, &keyboard_state.keyboard_buffer, strlen(buf));
+
+    // memcpy(buf, &keyboard_state.keyboard_buffer, keyboard_state.buffer_index);
+
+    // for (int i = 0; i < KEYBOARD_BUFFER_SIZE; i++) {
+    //     buf[i] = keyboard_state.keyboard_buffer[i];
+    // }
 
     // Flush keyboard buffer
     // keyboard_state.keyboard_buffer = '\0';
@@ -116,7 +130,7 @@ void keyboard_isr(void) {
         if (ascii_char != 0) {
             if (ascii_char == '\b') { // Backspace
                 if (col > 0) {
-                    if (col > col_bound) {
+                    if (col > col_bound && (keyboard_state.buffer_index != 0)) {
                         framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
                         framebuffer_set_cursor(row, col);
                     }
@@ -127,48 +141,25 @@ void keyboard_isr(void) {
                     framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
                     framebuffer_set_cursor(row, col);
                 }
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index-1] = ' ';
             } else if (ascii_char == '\n') { // Enter
                 // col_bound = 0; 
                 row++;
                 col_recent = col;
                 col = 0; // Move to the next line
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
+                keyboard_state.buffer_index = 0;
                 framebuffer_set_cursor(row, col_bound);
                 keyboard_state_deactivate();
             } else { // Regular character
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = ascii_char;
+                keyboard_state.buffer_index++;
                 framebuffer_write(row, col++, ascii_char, 0xF, 0);
                 framebuffer_write(row, col, ' ', 0xf, 0);
                 framebuffer_set_cursor(row, col);
             }
         }
     }
-    // } else {
-    //     uint8_t scancode = in(KEYBOARD_DATA_PORT);
-    //     char ascii_char = get_scancode_to_ascii_map()[scancode];
-
-    //     if (ascii_char != 0) {
-    //         if (ascii_char == '\b') { // Backspace
-    //             if (col > 0) {
-    //                 framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
-    //                 framebuffer_set_cursor(row, col);
-    //             }
-    //             else if (col == 0 && row > 0) {
-    //                 row--; // Move to the previous row
-    //                 col = col_recent; // Move to the last column of the previous row
-    //                 framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
-    //                 framebuffer_set_cursor(row, col);
-    //             }
-    //         } else if (ascii_char == '\n') { // Enter
-    //             row++;
-    //             col_recent = col;
-    //             col = 0; // Move to the next line
-    //             framebuffer_set_cursor(row, col);
-    //         } else { // Regular character
-    //             framebuffer_write(row, col++, ascii_char, 0xF, 0);
-    //             framebuffer_write(row, col, ' ', 0xf, 0);
-    //             framebuffer_set_cursor(row, col);
-    //         }
-    //     }
-    // }
     // Acknowledge the interrupt
     pic_ack(IRQ_KEYBOARD);
 }

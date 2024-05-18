@@ -128,9 +128,11 @@ void set_tss_kernel_current_stack(void)
 //     }
 // }
 
-void putchar(char str, uint32_t color) {
+void putchar(char str, uint32_t color)
+{
     int size = sizeof(str);
-    if (!memcmp(&str, "\0", 1)) {
+    if (!memcmp(&str, "\0", 1))
+    {
         puts(&str, size, color);
     }
 }
@@ -181,8 +183,11 @@ void syscall(struct InterruptFrame frame)
     case 4:
         keyboard_state_activate();
         __asm__("sti");
-        while (is_keyboard_blocking());
-        get_keyboard_buffer((char *)frame.cpu.general.ebx);
+        while (is_keyboard_blocking())
+            ;
+        char buffer[KEYBOARD_BUFFER_SIZE];
+        get_keyboard_buffer(buffer);
+        memcpy((char *)frame.cpu.general.ebx, buffer, KEYBOARD_BUFFER_SIZE);
         break;
     case 5:
         putchar(frame.cpu.general.ebx, frame.cpu.general.edx);
