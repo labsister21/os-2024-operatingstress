@@ -182,9 +182,4 @@ void puts(char *buf, uint32_t len, uint32_t color) {
         }
         col_bound = col;
   }
-    // for (uint32_t i = 0; i < len; i++)
-    // {
-    //     framebuffer_write(row, col + i, buf[i], color, 0);
-    // }
-    // col = col + len;
 }
