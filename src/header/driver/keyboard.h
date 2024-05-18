@@ -13,6 +13,7 @@
 
 #define KEYBOARD_DATA_PORT 0x60
 #define EXTENDED_SCANCODE_BYTE 0xE0
+#define KEYBOARD_BUFFER_SIZE 256
 
 #define KEYBOARD_BUFFER_SIZE 256
 
@@ -62,6 +63,8 @@ void set_terminal_length(uint8_t len);
  */
 void keyboard_isr(void);
 
+
 void puts(char *buf, uint32_t len, uint32_t color);
 
 #endif
+

@@ -555,10 +555,12 @@ void keyboard_state_deactivate(void)
 }
 
 // Get keyboard buffer value and flush the buffer - @param buf Pointer to char buffer
+
 void get_keyboard_buffer(char *buf)
 {
     // Copy keyboard buffer value to provided buffer
     memcpy(buf, &keyboard_state.keyboard_buffer, keyboard_state.buffer_index);
+
 }
 
 const char *get_scancode_to_ascii_map()
@@ -610,16 +612,42 @@ void keyboard_isr(void)
     else
     {
         uint8_t scancode = in(KEYBOARD_DATA_PORT);
-        char mapped_char = keyboard_scancode_1_to_ascii_map[scancode];
-    
-        if (mapped_char == '\b')
-        {
-            if ((col >= terminal_length + 1) && (keyboard_state.buffer_index != 0))
-            {
-                backspace_pressed = true;
-                framebuffer_write(row, col - 1, ' ', 0x0F, 0x00);
-                framebuffer_set_cursor(row, col - 1);
-                keyboard_state.keyboard_buffer[keyboard_state.buffer_index - 1] = ' ';
+        char ascii_char = get_scancode_to_ascii_map()[scancode];
+
+        if (ascii_char != 0) {
+            if (ascii_char == '\b') { // Backspace
+                if (col > 0) {
+                    if (col > col_bound && (keyboard_state.buffer_index != 0)) {
+                        framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
+                        framebuffer_set_cursor(row, col);
+                    }
+                }
+                else if (col == 0 && row > 0) {
+                    row--; // Move to the previous row
+                    col = col_recent; // Move to the last column of the previous row
+                    framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
+                    framebuffer_set_cursor(row, col);
+                }
+                // keyboard_state.keyboard_buffer[keyboard_state.buffer_index-1] = ' ';
+                if(keyboard_state.buffer_index > 0){
+                    keyboard_state.buffer_index--;
+                }
+            } else if (ascii_char == '\n') { // Enter
+                // col_bound = 0; 
+                row++;
+                col_recent = col;
+                col = 0; // Move to the next line
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = '\0';
+                keyboard_state.buffer_index = 0;
+                framebuffer_set_cursor(row, col_bound);
+                keyboard_state_deactivate();
+            } else { // Regular character
+                keyboard_state.keyboard_buffer[keyboard_state.buffer_index] = ascii_char;
+                keyboard_state.buffer_index++;
+                framebuffer_write(row, col++, ascii_char, 0xF, 0);
+                framebuffer_write(row, col, ' ', 0xf, 0);
+                framebuffer_set_cursor(row, col);
+
             }
         }
         else if (scancode == 0x1C && !key_pressed)
@@ -681,10 +709,6 @@ void puts(char *buf, uint32_t len, uint32_t color)
             }
         }
         col_bound = col;
-    }
-    // for (uint32_t i = 0; i < len; i++)
-    // {
-    //     framebuffer_write(row, col + i, buf[i], color, 0);
-    // }
-    // col = col + len;
+  }
+
 }

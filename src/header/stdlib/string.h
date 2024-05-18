@@ -54,6 +54,8 @@ void *memmove(void *dest, const void *src, size_t n);
 
 int strlen(char *);
 
+
 size_t len(char *);
+
 
 #endif

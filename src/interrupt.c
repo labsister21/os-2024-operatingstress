@@ -10,6 +10,8 @@ uint8_t length_of_terminal = 0;
 
 void syscall(struct InterruptFrame frame);
 
+void syscall(struct InterruptFrame frame);
+
 void io_wait(void)
 {
     out(0x80, 0);
@@ -137,28 +139,6 @@ void putchar(char str, uint32_t color)
     }
 }
 
-// void puts(char *str, uint32_t len, uint32_t color)
-// {
-//     // int size = sizeof(str);
-//     // if (!memcmp(&str, "\0", 1)) {
-//     //     puts(&str, size, color);
-//     // }
-//     for (uint8_t i = 0; i < len; i++) {
-//         framebuffer_set_cursor(curr_row, curr_col + i);
-//         if (str[i] == '\n') {
-//             curr_row++;
-//             curr_col = 0;
-//             framebuffer_set_cursor(curr_row, curr_col);
-//         } else {
-//             framebuffer_write(curr_row, curr_col + i, str[i], color, 0);
-//             if(i == len - 1) {
-//                 curr_col = curr_col + len;
-//             }
-//         }
-//         // curr_col_threshold = curr_col;
-//         // curr_col = col;
-//     }
-// }
 
 void syscall(struct InterruptFrame frame)
 {

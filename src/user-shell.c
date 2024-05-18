@@ -154,6 +154,7 @@ int main(void)
     // if (retcode == 0)
     //     syscall(6, (uint32_t) "owo\n", 4, 0xF);
 
+
     syscall(7, 0, 0, 0);
     // char *terminal = "OperatingStess ";
 
@@ -161,6 +162,7 @@ int main(void)
     splash();
     while (true)
     {
+
         char buf[256];
         printStr("OperatingStess@User:~", BIOS_LIGHT_GREEN);
         int i = 0;
