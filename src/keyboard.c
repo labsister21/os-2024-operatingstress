@@ -9,6 +9,7 @@ static bool is_capslock = false;
 int col = 0;
 int row = 0;
 int col_recent = 0;
+int col_bound = 0;
 
 const char keyboard_scancode_1_to_ascii_map[256] = {
       0, 0x1B, '1', '2', '3', '4', '5', '6',  '7', '8', '9',  '0',  '-', '=', '\b', '\t',
@@ -115,8 +116,10 @@ void keyboard_isr(void) {
         if (ascii_char != 0) {
             if (ascii_char == '\b') { // Backspace
                 if (col > 0) {
-                    framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
-                    framebuffer_set_cursor(row, col);
+                    if (col > col_bound) {
+                        framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
+                        framebuffer_set_cursor(row, col);
+                    }
                 }
                 else if (col == 0 && row > 0) {
                     row--; // Move to the previous row
@@ -125,10 +128,11 @@ void keyboard_isr(void) {
                     framebuffer_set_cursor(row, col);
                 }
             } else if (ascii_char == '\n') { // Enter
+                // col_bound = 0; 
                 row++;
                 col_recent = col;
                 col = 0; // Move to the next line
-                framebuffer_set_cursor(row, col);
+                framebuffer_set_cursor(row, col_bound);
             } else { // Regular character
                 framebuffer_write(row, col++, ascii_char, 0xF, 0);
                 framebuffer_write(row, col, ' ', 0xf, 0);
@@ -136,6 +140,34 @@ void keyboard_isr(void) {
             }
         }
     }
+    // } else {
+    //     uint8_t scancode = in(KEYBOARD_DATA_PORT);
+    //     char ascii_char = get_scancode_to_ascii_map()[scancode];
+
+    //     if (ascii_char != 0) {
+    //         if (ascii_char == '\b') { // Backspace
+    //             if (col > 0) {
+    //                 framebuffer_write(row, --col, ' ', 0xF, 0); // Remove character
+    //                 framebuffer_set_cursor(row, col);
+    //             }
+    //             else if (col == 0 && row > 0) {
+    //                 row--; // Move to the previous row
+    //                 col = col_recent; // Move to the last column of the previous row
+    //                 framebuffer_write(row, col, ' ', 0xF, 0); // Remove character
+    //                 framebuffer_set_cursor(row, col);
+    //             }
+    //         } else if (ascii_char == '\n') { // Enter
+    //             row++;
+    //             col_recent = col;
+    //             col = 0; // Move to the next line
+    //             framebuffer_set_cursor(row, col);
+    //         } else { // Regular character
+    //             framebuffer_write(row, col++, ascii_char, 0xF, 0);
+    //             framebuffer_write(row, col, ' ', 0xf, 0);
+    //             framebuffer_set_cursor(row, col);
+    //         }
+    //     }
+    // }
     // Acknowledge the interrupt
     pic_ack(IRQ_KEYBOARD);
 }
@@ -153,7 +185,7 @@ void puts(char *buf, uint32_t len, uint32_t color) {
                 col = col + len;
             }
         }
-        col_recent = col;
+        col_bound = col;
   }
     // for (uint32_t i = 0; i < len; i++)
     // {
