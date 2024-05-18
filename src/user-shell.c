@@ -1,17 +1,17 @@
 #include <stdint.h>
 #include "header/filesystem/fat32.h"
-
+#include "header/stdlib/string.h"
 
 // Color
 #define BIOS_LIGHT_GREEN 0b1010
-#define BIOS_LIGHT_BLUE  0b1001
-#define BIOS_WHITE       0b1111
-#define BIOS_BLACK       0b0000
-#define BIOS_GREY        0b0111
-#define BIOS_DARK_GREY   0b1000
-#define BIOS_RED         0b1100
-#define BIOS_PINK        0b1101
-#define BIOS_BROWN       0b0110
+#define BIOS_LIGHT_BLUE 0b1001
+#define BIOS_WHITE 0b1111
+#define BIOS_BLACK 0b0000
+#define BIOS_GREY 0b0111
+#define BIOS_DARK_GREY 0b1000
+#define BIOS_RED 0b1100
+#define BIOS_PINK 0b1101
+#define BIOS_BROWN 0b0110
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
@@ -24,18 +24,13 @@ void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
     __asm__ volatile("int $0x30");
 }
 
-int strlen(char* str){
-    int len = 0;
-    while (str[len] != '\0')
-        len++;
-    return len;
+void printStr(char *buf, uint8_t color)
+{
+    syscall(6, (uint32_t)buf, strlen(buf), color);
 }
 
-void printStr(char* buf, uint8_t color){
-    syscall(6, (uint32_t) buf, strlen(buf), color);
-}
-
-void splash(){
+void splash()
+{
     printStr("                              _______ _______ _     _\n", BIOS_RED);
     printStr("                              |_____| |______ |     |\n", BIOS_RED);
     printStr("                              |     | ______| |_____|\n\n", BIOS_RED);
@@ -56,19 +51,20 @@ int main(void)
     // if (retcode == 0)
     //     syscall(6, (uint32_t) "owo\n", 4, 0xF);
 
-    char buf;
+    char buf[256];
     syscall(7, 0, 0, 0);
     // char *terminal = "OperatingStess ";
 
     // buat nanti splashscreemn
     splash();
     while (true)
-    {   
+    {
         printStr("OperatingStess", BIOS_LIGHT_GREEN);
         printStr(":/ ", BIOS_GREY);
         // syscall(5, (uint32_t) terminal, strlen(terminal), 0x2);
         syscall(4, (uint32_t)&buf, 0, 0);
-        // syscall(5, (uint32_t)&buf, 0xF, 0);
+        printStr(buf, BIOS_PINK);
+        printStr("\n", BIOS_BLACK);
     }
 
     return 0;
