@@ -64,7 +64,17 @@ void parseCommand(uint32_t command){
             int32_t retcode = listCluster[depth];
             struct FAT32DirectoryTable table = {};
             request.buf = &table;
-            listDir[0] = "kancut";
+            syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+            for (int i = 0 ; i < 64 ; i++){
+                if (memcmp(table.table[i].name, (char *) command + 3, 8) == 0){
+                    depth +=1;
+                    listCluster[depth] = table.table[i].cluster_low | (table.table[i].cluster_high << 16);
+                    listDir[depth] = table.table[i].name;
+                    return;
+                }
+            }
+            printStr("Folder tidak ditemukan", BIOS_LIGHT_GREEN);
+            // listDir[0] = "kancut";
             // listDir[1] = "cangcut";
             // listDir[2] = "cimeng";
         }
@@ -84,7 +94,29 @@ void parseCommand(uint32_t command){
             listCluster[depth-1] = temp;
         }
         memcpy(request.name, listDir[depth], 8);
-
+        int32_t retcode;
+        struct FAT32DirectoryTable table = {};
+        request.buf = &table;
+        syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+        switch (retcode){
+            case 0:
+                for (int i = 0 ; i < 64 ; i++){
+                    printStr(table.table[i].name, BIOS_LIGHT_GREEN);
+                    if(table.table[i].name[0] == '\0'){
+                        memcpy(listDir[depth], request.name, 8);
+                    }
+                }
+                break;
+            case 1:
+                printStr("Not a folder", BIOS_RED);
+                break;
+            case 2:
+                printStr("Not found", BIOS_RED);
+                break;
+            default:
+                printStr("Error", BIOS_RED);
+                break;
+        }
 
     // mkdir
     }else if(memcmp((char*) command, "mkdir", 5)==0){
