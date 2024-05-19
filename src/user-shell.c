@@ -12,6 +12,7 @@
 #define BIOS_RED 0b1100
 #define BIOS_PINK 0b1101
 #define BIOS_BROWN 0b0110
+#define BIOS_PURPLE 0b1101
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
@@ -144,7 +145,7 @@ void parseCommand(uint32_t command)
     {
         struct FAT32DriverRequest request = {
             .buf = &cl,
-            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .parent_cluster_number = listCluster[depth],
             .buffer_size = 0,
         };
         request.buffer_size = 5 * CLUSTER_SIZE;
@@ -204,6 +205,8 @@ void parseCommand(uint32_t command)
 
 int main(void)
 {
+    listCluster[0] = ROOT_CLUSTER_NUMBER;
+    listDir[0] = (char *)"ROOT\0\0\0";
     struct ClusterBuffer cl[2] = {0};
     struct FAT32DriverRequest request = {
         .buf = &cl,
@@ -230,8 +233,8 @@ int main(void)
         int i = 0;
         while (listDir[i] != NULL)
         {
-            printStr("/", BIOS_LIGHT_GREEN);
-            printStr(listDir[i], BIOS_LIGHT_GREEN);
+            printStr("/", BIOS_PURPLE);
+            printStr(listDir[i], BIOS_PURPLE);
             i++;
         }
         printStr("%", BIOS_LIGHT_GREEN);
