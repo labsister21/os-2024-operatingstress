@@ -81,7 +81,7 @@ void parseCommand(uint32_t command)
                         depth += 1;
                         listCluster[depth] = table.table[i].cluster_low | (table.table[i].cluster_high << 16);
                         listDir[depth] = table.table[i].name;
-                        printStr("Berhasil Pindah Direktori\n", BIOS_LIGHT_GREEN);
+                        // printStr("Berhasil Pindah Direktori\n", BIOS_LIGHT_GREEN);
                         return;
                     }
                     else
@@ -91,7 +91,7 @@ void parseCommand(uint32_t command)
                     }
                 }
             }
-            printStr("Folder tidak ditemukan\n", BIOS_LIGHT_GREEN);
+            printStr("Folder tidak ditemukan\n", BIOS_RED);
         }
 
         // ls
@@ -144,10 +144,15 @@ void parseCommand(uint32_t command)
     }
     else if (memcmp((char *)command, "mkdir", 5) == 0)
     {
-        struct FAT32DriverRequest request = {
-            .parent_cluster_number = listCluster[id],
-            .buffer_size = 0,
-        };
+        struct ClusterBuffer cbuf[5];
+        struct FAT32DriverRequest request =
+            {
+                .buf = cbuf,
+                .name = "",
+                .ext = "\0\0\0",
+                .parent_cluster_number = listCluster[id],
+                .buffer_size = 0,
+            };
         memcpy(request.name, (void *)(command + 6), 8);
         int32_t retcode;
         syscall(2, (uint32_t)&request, (uint32_t)&retcode, 0);
