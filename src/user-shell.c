@@ -68,7 +68,7 @@ void parseCommand(uint32_t command)
                 .parent_cluster_number = listCluster[depth],
                 .buffer_size = 0};
             memcpy(request.name, listDir[depth], 8);
-            int32_t retcode = listCluster[depth];
+            int32_t retcode;
             struct FAT32DirectoryTable table = {};
             request.buf = &table;
             syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
@@ -76,16 +76,22 @@ void parseCommand(uint32_t command)
             {
                 if (memcmp(table.table[i].name, (char *)command + 3, 8) == 0)
                 {
-                    depth += 1;
-                    listCluster[depth] = table.table[i].cluster_low | (table.table[i].cluster_high << 16);
-                    listDir[depth] = table.table[i].name;
-                    return;
+                    if (table.table[i].attribute == ATTR_SUBDIRECTORY)
+                    {
+                        depth += 1;
+                        listCluster[depth] = table.table[i].cluster_low | (table.table[i].cluster_high << 16);
+                        listDir[depth] = table.table[i].name;
+                        printStr("Berhasil Pindah Direktori\n", BIOS_LIGHT_GREEN);
+                        return;
+                    }
+                    else
+                    {
+                        printStr("Bukan sebuah folder\n", BIOS_RED);
+                        return;
+                    }
                 }
             }
-            printStr("Folder tidak ditemukan", BIOS_LIGHT_GREEN);
-            // listDir[0] = "kancut";
-            // listDir[1] = "cangcut";
-            // listDir[2] = "cimeng";
+            printStr("Folder tidak ditemukan\n", BIOS_LIGHT_GREEN);
         }
 
         // ls
@@ -138,8 +144,21 @@ void parseCommand(uint32_t command)
     }
     else if (memcmp((char *)command, "mkdir", 5) == 0)
     {
-        printStr((char *)command, BIOS_LIGHT_BLUE);
-        // cat
+        struct FAT32DriverRequest request = {
+            .parent_cluster_number = listCluster[id],
+            .buffer_size = 0,
+        };
+        memcpy(request.name, (void *)(command + 6), 8);
+        int32_t retcode;
+        syscall(2, (uint32_t)&request, (uint32_t)&retcode, 0);
+        if (retcode == 0)
+            printStr("Berhasil membuat folder", BIOS_LIGHT_GREEN);
+        else if (retcode == 1)
+            printStr("File/Folder sudah ada", BIOS_RED);
+        else if (retcode == 2)
+            printStr("Parent tidak valid", BIOS_RED);
+        else
+            printStr("idk", BIOS_RED);
     }
     else if (memcmp((char *)command, "cat", 3) == 0)
     {
@@ -230,8 +249,8 @@ int main(void)
 
         char buf[256];
         printStr("OperatingStess@User:~", BIOS_LIGHT_GREEN);
-        int i = 0;
-        while (listDir[i] != NULL)
+        uint32_t i = 0;
+        while (i != depth + 1)
         {
             printStr("/", BIOS_PURPLE);
             printStr(listDir[i], BIOS_PURPLE);
