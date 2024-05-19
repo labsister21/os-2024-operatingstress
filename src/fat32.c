@@ -175,43 +175,52 @@ bool is_dir_table_valid(void)
 
 int8_t read(struct FAT32DriverRequest request)
 {
-    // baca dulu dir_table
+    // Baca terlebih dahulu directory table dari parent cluster
     read_clusters(&fat32_driver_state.dir_table_buf, request.parent_cluster_number, 1);
 
-    // buat reference biar gampang bacanya
+    // Referensi ke directory table
     struct FAT32DirectoryEntry *table = fat32_driver_state.dir_table_buf.table;
 
-    // looping sampe seukuran directory size table = CLUSTER_SIZE / besar DIRECTORY_ENTRY
+    // Loop melalui directory entries
     for (uint32_t i = 0; i < CLUSTER_SIZE / sizeof(struct FAT32DirectoryEntry); i++)
     {
+        // Periksa apakah nama dan ekstensi cocok
         if (!memcmp(table[i].name, request.name, 8) && !memcmp(table[i].ext, request.ext, 3))
         {
-            if (table[i].attribute == 1)
+            // Periksa apakah entry adalah direktori
+            if (table[i].attribute & ATTR_SUBDIRECTORY)
             {
-                // kalo bukan file
-                return 1;
+                return 1; // Entry adalah direktori, bukan file
             }
 
+            // Periksa apakah buffer cukup untuk menampung file
             if (request.buffer_size < table[i].filesize)
             {
-                // kalo buffernya ga cukup
-                return -1;
+                return -1; // Buffer tidak cukup
             }
 
-            // load ke request.buf sebesar hasil divceil
+            // Hitung jumlah cluster yang diperlukan
             uint16_t cluster_count = divceil(table[i].filesize, CLUSTER_SIZE);
-            uint16_t cluster = table[i].cluster_low;
+            uint16_t cluster = table[i].cluster_low | (table[i].cluster_high << 16);
+
+            // Baca file dari setiap cluster
             for (uint16_t j = 0; j < cluster_count; j++)
             {
                 read_clusters(request.buf + j * CLUSTER_SIZE, cluster, 1);
                 cluster = fat32_driver_state.fat_table.cluster_map[cluster];
+
+                // Periksa apakah mencapai end of cluster chain
+                if (cluster >= 0xFFF8)
+                {
+                    break;
+                }
             }
 
-            return 0;
+            return 0; // Operasi berhasil
         }
     }
 
-    return 2;
+    return 2; // File tidak ditemukan
 }
 
 int8_t read_directory(struct FAT32DriverRequest request)
