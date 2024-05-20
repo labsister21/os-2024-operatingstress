@@ -95,7 +95,6 @@ void parseCommand(uint32_t command)
     // cd
     if (memcmp((char *)command, "cd", 2) == 0)
     { // change directory
-        printStr((char *)command, BIOS_LIGHT_BLUE);
         if (memcmp("..", (void *)command + 3, 2) == 0)
         {
             if (depth == 0)
@@ -146,7 +145,6 @@ void parseCommand(uint32_t command)
     }
     else if (memcmp((char *)command, "ls", 2) == 0)
     {
-        printStr((char *)command, BIOS_LIGHT_BLUE);
         struct FAT32DriverRequest request = {
             .buf = &cl,
             .buffer_size = 0};
@@ -170,7 +168,8 @@ void parseCommand(uint32_t command)
         case 0:
             for (int i = 0; i < 64; i++)
             {
-                printStr(table.table[i].name, BIOS_LIGHT_GREEN);
+                printStr(table.table[i].name, BIOS_LIGHT_LIGHT_BLUE);
+                printStr(" ", BIOS_BLACK);
                 if (table.table[i].name[0] == '\0')
                 {
                     memcpy(listDir[depth], request.name, 8);
@@ -258,7 +257,6 @@ void parseCommand(uint32_t command)
         printStr((char *) command, BIOS_LIGHT_BLUE);
     // mv 
     }else if(memcmp((char*) command, "mv", 2)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
         struct FAT32DriverRequest request = {
             .buf                   = &cl,
             .parent_cluster_number = ROOT_CLUSTER_NUMBER,
@@ -363,7 +361,6 @@ void parseCommand(uint32_t command)
 
     // cls 
     }else if(memcmp((char*) command, "cls", 3)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
         clearScreen();
     // find
     }else if (memcmp((char *) command, "find", 4) == 0){ 
