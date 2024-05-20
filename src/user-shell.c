@@ -103,7 +103,7 @@ void parseCommand(uint32_t command)
                 return;
             }
             depth--;
-            printStr("Berhasil pindah ke", 0x2);
+            printStr("Berhasil pindah ke ", BIOS_LIGHT_BLUE);
             printStr(listDir[depth], 0xF);
             return;
         }
@@ -202,7 +202,7 @@ void parseCommand(uint32_t command)
         int32_t retcode;
         syscall(2, (uint32_t)&request, (uint32_t)&retcode, 0);
         if (retcode == 0)
-            printStr("Berhasil membuat folder", BIOS_LIGHT_GREEN);
+            printStr("Berhasil membuat folder", BIOS_LIGHT_BLUE);
         else if (retcode == 1)
             printStr("File/Folder sudah ada", BIOS_RED);
         else if (retcode == 2)
