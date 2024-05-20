@@ -308,7 +308,6 @@ void parseCommand(uint32_t command)
         struct FAT32DirectoryTable table = {};
         requestDst.buf = &table;
         syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode, 0);
-
         for (int i = 0; i < 64; i++)
         {
             if (memcmp(table.table[i].name, (void *)(command + 3 + length + 5), len((char *)command + 3 + length + 5)) == 0)
@@ -342,44 +341,6 @@ void parseCommand(uint32_t command)
             printStr("Error", BIOS_BROWN);
             break;
         }
-    }
-
-    else if (memcmp((char *)command, "rm", 2) == 0)
-    {
-        struct FAT32DriverRequest request = {
-            .buf = &cl,
-            .parent_cluster_number = listCluster[depth],
-            .buffer_size = 0,
-        };
-        request.buffer_size = 5 * CLUSTER_SIZE;
-        int nameLen = 0;
-        char *itr = (char *)command + 3;
-        for (int i = 0; i < strlen(itr); i++)
-        {
-            if (itr[i] == '.')
-            {
-                request.ext[0] = itr[i + 1];
-                request.ext[1] = itr[i + 2];
-                request.ext[2] = itr[i + 3];
-                break;
-            }
-            else
-            {
-                nameLen++;
-            }
-        }
-        memcpy(request.name, (void *)(command + 3), 8);
-        // memcpy(request.ext, "\0\0\0", 3);
-        int32_t retcode;
-        syscall(3, (uint32_t)&request, (uint32_t)&retcode, 0);
-        if (retcode == 0)
-            printStr("Delete Berhasil", BIOS_LIGHT_BLUE);
-        else if (retcode == 1)
-            printStr("File/Folder Tidak ada", BIOS_RED);
-        else if (retcode == 2)
-            printStr("Tidak Kosong", BIOS_RED);
-        else
-            printStr("Unknown Error", BIOS_RED);
     }
     else if (memcmp((char *)command, "mv", 2) == 0)
     {
@@ -428,7 +389,6 @@ void parseCommand(uint32_t command)
         struct FAT32DirectoryTable table = {};
         requestDst.buf = &table;
         syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode, 0);
-
         for (int i = 0; i < 64; i++)
         {
             if (memcmp(table.table[i].name, (void *)(command + 3 + length + 5), len((char *)command + 3 + length + 5)) == 0)
@@ -538,17 +498,14 @@ void parseCommand(uint32_t command)
             .buffer_size = 0,
         };
 
-        // if (depth != 0)
-        // {
-        //     request.parent_cluster_number = listCluster[depth - 1];
-        //     depth--;
-        // }
-        while (depth != 0)
+        if (depth != 0)
         {
-            depth--;
+            request.parent_cluster_number = listCluster[depth - 1];
         }
-
-        request.parent_cluster_number = listCluster[depth];
+        else
+        {
+            request.parent_cluster_number = listCluster[depth];
+        }
 
         // copy ke name directory request
         memcpy(request.name, listDir[depth], 8);
@@ -570,16 +527,13 @@ void parseCommand(uint32_t command)
                 if (memcmp(name, target, strlen(target)) == 0)
                 {
                     printStr("Ditemukan ", BIOS_LIGHT_BLUE);
-                    uint32_t i = 0;
-                    while (i != depth + 1)
-                    {
-                        printStr("/", BIOS_PURPLE);
-                        printStr(listDir[i], BIOS_PURPLE);
-                        i++;
-                    }
-                    printStr("/", BIOS_PURPLE);
                     printStr((char *)target, BIOS_DARK_ORANGE);
                     return;
+                }
+
+                if (table.table[i].name[0] == '\0')
+                {
+                    memcpy(listDir[depth], request.name, 8);
                 }
             }
         }
