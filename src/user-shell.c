@@ -15,7 +15,7 @@
 #define BIOS_BROWN 0b0110
 #define BIOS_PURPLE 0b1101
 #define BIOS_DARK_ORANGE 0x6
-#define BIOS_DARK_RED 0x4
+#define BIOS_DARK_RED BIOS_RED
 #define BIOS_LIGHT_LIGHT_BLUE 0b1011
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
@@ -266,10 +266,42 @@ void parseCommand(uint32_t command)
         printStr((char *)command, BIOS_LIGHT_BLUE);
         // rm
     }
-    else if (memcmp((char *)command, "rm", 3) == 0)
+    else if (memcmp((char *)command, "rm", 2) == 0)
     {
-        printStr((char *)command, BIOS_LIGHT_BLUE);
-        // mv
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size = 0,
+        };
+        request.buffer_size = 5 * CLUSTER_SIZE;
+        int nameLen = 0;
+        char *itr = (char *)command + 3;
+        for (int i = 0; i < strlen(itr); i++)
+        {
+            if (itr[i] == '.')
+            {
+                request.ext[0] = itr[i + 1];
+                request.ext[1] = itr[i + 2];
+                request.ext[2] = itr[i + 3];
+                break;
+            }
+            else
+            {
+                nameLen++;
+            }
+        }
+        memcpy(request.name, (void *)(command + 3), 8);
+        // memcpy(request.ext, "\0\0\0", 3);
+        int32_t retcode;
+        syscall(3, (uint32_t)&request, (uint32_t)&retcode, 0);
+        if (retcode == 0)
+            printStr("Delete Berhasil", BIOS_LIGHT_BLUE);
+        else if (retcode == 1)
+            printStr("File/Folder Tidak ada", BIOS_RED);
+        else if (retcode == 2)
+            printStr("Tidak Kosong", BIOS_RED);
+        else
+            printStr("Unknown Error", BIOS_RED);
     }
     else if (memcmp((char *)command, "mv", 2) == 0)
     {
