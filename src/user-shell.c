@@ -316,29 +316,24 @@ void parseCommand(uint32_t command)
                 syscall(2, (uint32_t)&request, (uint32_t)&codeWrite, 0);
                 break;
             }
-
-            if (table.table[i].name[0] == '\0')
-            {
-                memcpy(listDir[depth], request.name, 8);
-            }
         }
         // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup
         switch (codeWrite)
         {
         case 0:
-            printStr("Sukses", BIOS_BROWN);
+            printStr("Sukses Menulis", BIOS_WHITE);
             break;
         case -1:
-            printStr("Penyimpanan tidak cukup", BIOS_BROWN);
+            printStr("Penyimpanan tidak cukup", BIOS_WHITE);
             break;
         case 1:
-            printStr("File/folder sudah ada", BIOS_BROWN);
+            printStr("File/folder sudah ada", BIOS_WHITE);
             break;
         case 2:
-            printStr("Invalid parent cluster", BIOS_BROWN);
+            printStr("Invalid parent cluster", BIOS_WHITE);
             break;
         default:
-            printStr("Error", BIOS_BROWN);
+            printStr("Error", BIOS_WHITE);
             break;
         }
     }
@@ -396,35 +391,25 @@ void parseCommand(uint32_t command)
                 request.parent_cluster_number = (table.table[i].cluster_high << 16) | table.table[i].cluster_low;
                 syscall(2, (uint32_t)&request, (uint32_t)&codeWrite, 0);
                 break;
-
-                if (table.table[i].name[0] == '\0')
-                {
-                    memcpy(listDir[depth], request.name, 8);
-                }
-            }
-
-            if (table.table[i].name[0] == '\0')
-            {
-                memcpy(listDir[depth], request.name, 8);
             }
         }
         // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup
         switch (codeWrite)
         {
         case 0:
-            printStr("Sukses", BIOS_BROWN);
+            printStr("Sukses Menulis", BIOS_WHITE);
             break;
         case -1:
-            printStr("Penyimpanan tidak cukup", BIOS_BROWN);
+            printStr("Penyimpanan tidak cukup", BIOS_WHITE);
             break;
         case 1:
-            printStr("File/folder sudah ada", BIOS_BROWN);
+            printStr("File/folder sudah ada", BIOS_WHITE);
             break;
         case 2:
-            printStr("Invalid parent cluster", BIOS_BROWN);
+            printStr("Invalid parent cluster", BIOS_WHITE);
             break;
         default:
-            printStr("Error", BIOS_BROWN);
+            printStr("Error", BIOS_WHITE);
             break;
         }
 
@@ -543,7 +528,6 @@ void parseCommand(uint32_t command)
         {
             request.parent_cluster_number = listCluster[depth];
         }
-
         // copy ke name directory request
         memcpy(request.name, listDir[depth], 8);
 
@@ -566,11 +550,6 @@ void parseCommand(uint32_t command)
                     printStr("Ditemukan ", BIOS_LIGHT_BLUE);
                     printStr((char *)target, BIOS_DARK_ORANGE);
                     return;
-                }
-
-                if (table.table[i].name[0] == '\0')
-                {
-                    memcpy(listDir[depth], request.name, 8);
                 }
             }
         }
