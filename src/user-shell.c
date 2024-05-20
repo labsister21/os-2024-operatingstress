@@ -463,6 +463,43 @@ void parseCommand(uint32_t command)
 
         // cls
     }
+    else if (memcmp((char *)command, "rm", 2) == 0)
+    {
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size = 0,
+        };
+        request.buffer_size = 5 * CLUSTER_SIZE;
+        int nameLen = 0;
+        char *itr = (char *)command + 3;
+        for (int i = 0; i < strlen(itr); i++)
+        {
+            if (itr[i] == '.')
+            {
+                request.ext[0] = itr[i + 1];
+                request.ext[1] = itr[i + 2];
+                request.ext[2] = itr[i + 3];
+                break;
+            }
+            else
+            {
+                nameLen++;
+            }
+        }
+        memcpy(request.name, (void *)(command + 3), 8);
+        // memcpy(request.ext, "\0\0\0", 3);
+        int32_t retcode;
+        syscall(3, (uint32_t)&request, (uint32_t)&retcode, 0);
+        if (retcode == 0)
+            printStr("Delete Berhasil", BIOS_LIGHT_BLUE);
+        else if (retcode == 1)
+            printStr("File/Folder Tidak ada", BIOS_RED);
+        else if (retcode == 2)
+            printStr("Tidak Kosong", BIOS_RED);
+        else
+            printStr("Unknown Error", BIOS_RED);
+    }
     else if (memcmp((char *)command, "cls", 3) == 0)
     {
         clearScreen();
