@@ -261,49 +261,7 @@ void parseCommand(uint32_t command)
 
         // cp
     }
-    else if (memcmp((char *)command, "cp", 3) == 0)
-    {
-        printStr((char *)command, BIOS_LIGHT_BLUE);
-        // rm
-    }
-    else if (memcmp((char *)command, "rm", 2) == 0)
-    {
-        struct FAT32DriverRequest request = {
-            .buf = &cl,
-            .parent_cluster_number = listCluster[depth],
-            .buffer_size = 0,
-        };
-        request.buffer_size = 5 * CLUSTER_SIZE;
-        int nameLen = 0;
-        char *itr = (char *)command + 3;
-        for (int i = 0; i < strlen(itr); i++)
-        {
-            if (itr[i] == '.')
-            {
-                request.ext[0] = itr[i + 1];
-                request.ext[1] = itr[i + 2];
-                request.ext[2] = itr[i + 3];
-                break;
-            }
-            else
-            {
-                nameLen++;
-            }
-        }
-        memcpy(request.name, (void *)(command + 3), 8);
-        // memcpy(request.ext, "\0\0\0", 3);
-        int32_t retcode;
-        syscall(3, (uint32_t)&request, (uint32_t)&retcode, 0);
-        if (retcode == 0)
-            printStr("Delete Berhasil", BIOS_LIGHT_BLUE);
-        else if (retcode == 1)
-            printStr("File/Folder Tidak ada", BIOS_RED);
-        else if (retcode == 2)
-            printStr("Tidak Kosong", BIOS_RED);
-        else
-            printStr("Unknown Error", BIOS_RED);
-    }
-    else if (memcmp((char *)command, "mv", 2) == 0)
+    else if (memcmp((char *)command, "cp", 2) == 0)
     {
         struct FAT32DriverRequest request = {
             .buf = &cl,
@@ -313,14 +271,9 @@ void parseCommand(uint32_t command)
         request.buffer_size = 5 * CLUSTER_SIZE;
         int length = 0;
         char *param = (char *)command + 3;
-        // char ext[3];
         getExt(param, &length, request.ext);
-        // for(size_t i=0;i<3;i++){
-        //     request.ext[i] = ext[i];
-        //     printStr((char *)request.ext[i], BIOS_DARK_GREY);
-        // }
+
         memcpy(request.name, (void *)(command + 3), length);
-        printStr(request.ext, BIOS_DARK_GREY);
 
         int32_t readCode;
         struct FAT32DriverRequest requestDst = {
@@ -355,7 +308,7 @@ void parseCommand(uint32_t command)
         struct FAT32DirectoryTable table = {};
         requestDst.buf = &table;
         syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode, 0);
-        printStr(requestDst.name, BIOS_WHITE);
+
         for (int i = 0; i < 64; i++)
         {
             if (memcmp(table.table[i].name, (void *)(command + 3 + length + 5), len((char *)command + 3 + length + 5)) == 0)
@@ -363,6 +316,98 @@ void parseCommand(uint32_t command)
                 request.parent_cluster_number = (table.table[i].cluster_high << 16) | table.table[i].cluster_low;
                 syscall(2, (uint32_t)&request, (uint32_t)&codeWrite, 0);
                 break;
+            }
+
+            if (table.table[i].name[0] == '\0')
+            {
+                memcpy(listDir[depth], request.name, 8);
+            }
+        }
+        // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup
+        switch (codeWrite)
+        {
+        case 0:
+            printStr("Sukses", BIOS_BROWN);
+            break;
+        case -1:
+            printStr("Penyimpanan tidak cukup", BIOS_BROWN);
+            break;
+        case 1:
+            printStr("File/folder sudah ada", BIOS_BROWN);
+            break;
+        case 2:
+            printStr("Invalid parent cluster", BIOS_BROWN);
+            break;
+        default:
+            printStr("Error", BIOS_BROWN);
+            break;
+        }
+    }
+    else if (memcmp((char *)command, "mv", 2) == 0)
+    {
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size = 0,
+        };
+        request.buffer_size = 5 * CLUSTER_SIZE;
+        int length = 0;
+        char *param = (char *)command + 3;
+        getExt(param, &length, request.ext);
+
+        memcpy(request.name, (void *)(command + 3), length);
+
+        int32_t readCode;
+        struct FAT32DriverRequest requestDst = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size = 0,
+        };
+
+        memcpy(requestDst.name, listDir[depth], strlen(listDir[depth]));
+        syscall(0, (uint32_t)&request, (uint32_t)&readCode, 0);
+        // 1 kalo bukan file, -1 kalo buffernya ga cukup, 0 load ke req.buf sebesar hasi divceil, 2 kalo?
+        switch (readCode)
+        {
+        case 0:
+            printStr("Berhasil membaca", BIOS_LIGHT_BLUE);
+            break;
+        case -1:
+            printStr("Buffer ga cukup bos", BIOS_LIGHT_BLUE);
+            break;
+        case 1:
+            printStr("Ini bukan file", BIOS_LIGHT_BLUE);
+            break;
+        case 2:
+            printStr("Tidak ditemukan", BIOS_LIGHT_BLUE);
+            break;
+        default:
+            printStr("Error", BIOS_LIGHT_BLUE);
+            break;
+        }
+
+        int32_t codeWrite;
+        struct FAT32DirectoryTable table = {};
+        requestDst.buf = &table;
+        syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode, 0);
+
+        for (int i = 0; i < 64; i++)
+        {
+            if (memcmp(table.table[i].name, (void *)(command + 3 + length + 5), len((char *)command + 3 + length + 5)) == 0)
+            {
+                request.parent_cluster_number = (table.table[i].cluster_high << 16) | table.table[i].cluster_low;
+                syscall(2, (uint32_t)&request, (uint32_t)&codeWrite, 0);
+                break;
+
+                if (table.table[i].name[0] == '\0')
+                {
+                    memcpy(listDir[depth], request.name, 8);
+                }
+            }
+
+            if (table.table[i].name[0] == '\0')
+            {
+                memcpy(listDir[depth], request.name, 8);
             }
         }
         // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup
@@ -486,6 +531,11 @@ void parseCommand(uint32_t command)
                     printStr("Ditemukan ", BIOS_LIGHT_BLUE);
                     printStr((char *)target, BIOS_DARK_ORANGE);
                     return;
+                }
+
+                if (table.table[i].name[0] == '\0')
+                {
+                    memcpy(listDir[depth], request.name, 8);
                 }
             }
         }
