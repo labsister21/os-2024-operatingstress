@@ -53,9 +53,33 @@ void getExt(char* param, int* length, char ext[]){
 
 void splash()
 {
-    printStr("                              _______ _______ _     _\n", BIOS_RED);
-    printStr("                              |_____| |______ |     |\n", BIOS_RED);
-    printStr("                              |     | ______| |_____|\n\n", BIOS_RED);
+    int delay = 3000;
+    for(int n = 0 ; n < delay ; n++){
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("                      ____                    __  _          \n", BIOS_LIGHT_GREEN);
+        printStr("                     / __ \\___  ___ _______ _/ /_(_)__  ___ _\n", BIOS_LIGHT_GREEN);
+        printStr("                    / /_/ / _ \\/ -_) __/ _ `/ __/ / _ \\/ _ `/\n", BIOS_LIGHT_GREEN);
+        printStr("                    \\____/ .__/\\__/_/  \\_,_/\\__/_/_//_/\\_, / \n", BIOS_LIGHT_GREEN);
+        printStr("                        /_/  ____                     /___/  \n", BIOS_LIGHT_GREEN);
+        printStr("                            / __/ /________ ___ ___                \n", BIOS_LIGHT_GREEN);
+        printStr("                           _\\ \\/ __/ __/ -_|_-<(_-<                \n", BIOS_LIGHT_GREEN);
+        printStr("                          /___/\\__/_/  \\__/___/___/                \n", BIOS_LIGHT_GREEN);
+        printStr("\n", BIOS_BLACK);
+        printStr("                                   loading...                \n", BIOS_WHITE);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        syscall(5,0,0,0);
+    }
 }
 
 uint32_t id = 0;
@@ -362,10 +386,14 @@ int main(void)
     //     syscall(6, (uint32_t) "owo\n", 4, 0xF);
 
     syscall(7, 0, 0, 0);
-    // char *terminal = "OperatingStess ";
 
-    // buat nanti splashscreemn
+    // splashscreemn
     splash();
+
+    // bersihkan frame
+    syscall(8, 0, 0, 0);
+
+    // mulai frame utama
     while (true)
     {
 

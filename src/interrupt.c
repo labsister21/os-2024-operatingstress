@@ -170,7 +170,7 @@ void syscall(struct InterruptFrame frame)
         memcpy((char *)frame.cpu.general.ebx, buffer, KEYBOARD_BUFFER_SIZE);
         break;
     case 5:
-        putchar(frame.cpu.general.ebx, frame.cpu.general.edx);
+        setCursorCLS();
         break;
     case 6:
         puts(
