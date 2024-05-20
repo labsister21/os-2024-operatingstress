@@ -18,6 +18,10 @@
   <span style="font-size: 15px;">(13522120)</span><br><br>
 </p>
 
+<div align="center">
+<img src="img/OSGIF.gif" alt="docs"><br>
+</div>
+
 ## 📒 Table of Contents
 * [Deskripsi](#📄-deskripsi)
 * [Struktur File](#📁-struktur-file)
