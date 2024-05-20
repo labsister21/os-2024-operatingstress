@@ -102,7 +102,24 @@ Tugas ini dibuat dalam rangka _introductory to kernel development_ dan meperliha
 ```
 
 ## ❓ Requirements
+1. Netwide Assembler (NASM): Compiler assembly x86 untuk kode yang membutuhkan instruksi asm
+2. GNU C Compiler: Compiler C untuk sistem operasi
+3. GNU Linker: Linker object code hasil kompilasi
+4. QEMU - System i386: Emulator-VM untuk menjalankan OS
+5. GNU Make: Build tools
+6. genisoimage: Tool untuk pembuatan image
+7. GDB: Debugger
+8. WSL (Windows Subsytem for Linux) bila menggunakan windows
 
 ## 🔨 Penggunaan
-
-Jalankan OS dengan QEMU
+1. Clone repository ini dengan: 
+    ```
+    https://github.com/labsister21/os-2024-operatingstress.git
+    ```
+2. Install requierements yang dibutuhkan untuk menjalankan OS
+3. Buka terminal pada root repository
+4. Jalankan program dengan:
+    ```
+    make
+    ```
+5. Program akan tampil melalui QEMU
