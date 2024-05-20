@@ -143,7 +143,9 @@ void parseCommand(uint32_t command)
         case 0:
             for (int i = 0; i < 64; i++)
             {
+                // printStr("  ", BIOS_LIGHT_GREEN);
                 printStr(table.table[i].name, BIOS_LIGHT_GREEN);
+                // printStr("\n\0", BIOS_LIGHT_GREEN);
                 if (table.table[i].name[0] == '\0')
                 {
                     memcpy(listDir[depth], request.name, 8);
@@ -231,27 +233,32 @@ void parseCommand(uint32_t command)
         printStr((char *) command, BIOS_LIGHT_BLUE);
     // mv 
     }else if(memcmp((char*) command, "mv", 2)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
+        // printStr((char *) command, BIOS_LIGHT_BLUE);
         struct FAT32DriverRequest request = {
             .buf                   = &cl,
-            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .parent_cluster_number = listCluster[depth],
             .buffer_size           = 0,
         };
         request.buffer_size = 5*CLUSTER_SIZE;
         int length = 0;
         char* param = (char *) command + 3;
-        char ext[3];
-        getExt(param, &length, ext);
+        // char ext[3];
+        getExt(param, &length, request.ext);
+        // for(size_t i=0;i<3;i++){
+        //     request.ext[i] = ext[i];
+        //     printStr((char *)request.ext[i], BIOS_DARK_GREY);
+        // }
         memcpy(request.name, (void *) (command + 3), length);
+        printStr(request.ext, BIOS_DARK_GREY);
         
         int32_t readCode;
         struct FAT32DriverRequest requestDst ={
             .buf                   = &cl,
-            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .parent_cluster_number = listCluster[depth],
             .buffer_size           = 0,
         };
 
-        memcpy(requestDst.name, listDir[depth], 8);
+        memcpy(requestDst.name, listDir[depth], strlen(listDir[depth]));
         syscall(0, (uint32_t)&request, (uint32_t) &readCode, 0);
         // 1 kalo bukan file, -1 kalo buffernya ga cukup, 0 load ke req.buf sebesar hasi divceil, 2 kalo?
         switch (readCode){
@@ -272,14 +279,15 @@ void parseCommand(uint32_t command)
                 break;
         }
 
-        int32_t codeWrite = 10;
+        int32_t codeWrite;
         struct FAT32DirectoryTable table = {};
         requestDst.buf = &table;
         syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode,0);
+        printStr(requestDst.name, BIOS_WHITE);
         for(int i=0; i<64; i++){
             if(memcmp(table.table[i].name, (void *)(command+3+length+5), len((char *)command+3+length+5))==0){
                 request.parent_cluster_number = (table.table[i].cluster_high<<16) | table.table[i].cluster_low;
-                syscall(2, (uint32_t) &request, (uint32_t)codeWrite, 0);
+                syscall(2, (uint32_t) &request, (uint32_t)&codeWrite, 0);
                 break;
             }
         }
@@ -308,10 +316,12 @@ void parseCommand(uint32_t command)
             .buffer_size           = 0,
         };
         request3.buffer_size = 5*CLUSTER_SIZE;
-        for(size_t i=0;i<3;i++){
-            request3.ext[i] = ext[i];
-        }
-        memcpy(request3.name, (void *) (command+3), 8);
+        getExt(param, &length, request3.ext);
+        printStr(request3.name, BIOS_BROWN);
+        // for(size_t i=0;i<3;i++){
+        //     request3.ext[i] = ext[i];
+        // }
+        memcpy(request3.name, (void *) (command+3), length);
         int32_t delCode;
         syscall(3, (uint32_t) &request3, (uint32_t) &delCode, 0);
 

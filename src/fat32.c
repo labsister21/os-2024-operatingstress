@@ -370,7 +370,7 @@ int8_t delete(struct FAT32DriverRequest request)
     {
         if (table[i].user_attribute != UATTR_NOT_EMPTY)
             continue;
-        if (memcmp(filename, table[i].name, 8) == 0)
+        if (memcmp(filename, table[i].name, strlen(table[i].name)) == 0)
         {
             // namanya ketemu, cek apakah sebuah file atau direktori
             if (table[i].attribute)
