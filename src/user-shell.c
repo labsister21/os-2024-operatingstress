@@ -406,6 +406,7 @@ int main(void)
             printStr(listDir[i], BIOS_PURPLE);
             i++;
         }
+        printStr(" ", BIOS_BLACK);
         // printStr("%", BIOS_LIGHT_GREEN);
         // syscall(5, (uint32_t) terminal, strlen(terminal), 0x2);
         syscall(4, (uint32_t)&buf, 0, 0);
