@@ -15,6 +15,9 @@
 #define BIOS_PINK 0b1101
 #define BIOS_BROWN 0b0110
 #define BIOS_PURPLE 0b1101
+#define BIOS_DARK_ORANGE 0x6
+#define BIOS_DARK_RED 0x4
+#define BIOS_LIGHT_LIGHT_BLUE 0b1011
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
@@ -363,6 +366,65 @@ void parseCommand(uint32_t command)
         printStr((char *) command, BIOS_LIGHT_BLUE);
         clearScreen();
     // find
+    }else if (memcmp((char *) command, "find", 4) == 0){ 
+        char *target;
+
+        target = (char *) command + 5;
+        for (int i = 0; i < strlen((char *) command + 5); i++)
+        {
+            // target dengan ekstensi dari .
+            if (((char *) command + 5)[i] == '.') 
+            {
+                // nama target tanpa ekstensi
+                for (int i = 0; i < strlen(target); i++)
+                {
+                    if (target[i] == '.')
+                    {
+                        target[i] = '\0';
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        // searching
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[id],
+            .buffer_size = 0,
+        }; 
+
+        if (id != 0) {
+            request.parent_cluster_number = listCluster[id-1];
+        }
+        else {
+            request.parent_cluster_number = listCluster[id];
+        }
+
+        // copy ke name directory request
+        memcpy(request.name, listDir[id], 8);
+
+        int32_t retcode;
+        struct FAT32DirectoryTable table = {};
+        request.buf = &table;
+        
+        // read directory
+        syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+
+        // komparasi
+        if (retcode == 0) {
+
+            for (int i = 0; i < 64; i++) {
+                char* name = table.table[i].name;
+                if(memcmp(name, target, strlen(target)) == 0){
+                    printStr("Ditemukan ", BIOS_LIGHT_BLUE);
+                    printStr((char *) target, BIOS_DARK_ORANGE);
+                    return;
+                }
+            }
+        }
+        printStr("Tidak ditemukan", BIOS_RED);
     }else{
         printStr("Masukkin command yang bener dong", BIOS_LIGHT_BLUE);
     }
