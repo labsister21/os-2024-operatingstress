@@ -38,6 +38,29 @@ void kernel_setup(void)
     };
     read(request);
 
+    int n = 30;
+    char input[n];
+    for (int i = 0; i < n; i++)
+    {
+        if (i < 10)
+            input[i] = 'a';
+        else if (i < 4096)
+            input[i] = 'c';
+        else
+            input[i] = 'b';
+    }
+    input[n - 1] = '\0';
+
+    struct FAT32DriverRequest request3 = {
+        .buf = input,
+        .buffer_size = n,
+        .name = {'e', 'd', '3', '\0', '\0', '\0'},
+        .ext = {'t', 'x', 't'},
+        .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+    };
+
+    write(request3);
+
     // Set TSS $esp pointer and jump into shell
     set_tss_kernel_current_stack();
     kernel_execute_user_program((uint8_t *)0);
