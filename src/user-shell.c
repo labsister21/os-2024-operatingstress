@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "header/filesystem/fat32.h"
 #include "header/stdlib/string.h"
+#include "header/text/framebuffer.h"
+
 
 // Color
 #define BIOS_LIGHT_GREEN 0b1010
@@ -28,6 +30,25 @@ void printStr(char *buf, uint8_t color)
 {
     syscall(6, (uint32_t)buf, strlen(buf), color);
 }
+
+void clearScreen(){
+    syscall(8,0,0,0);
+}
+
+void getExt(char* param, int* length, char ext[]){
+    while(*param != '.' && *param !='\0'){
+        printf("%d\n", *length);
+        *length+=1;
+        param++;
+    }
+
+    if (*param == '.') {
+        for(size_t i=0; i<3; i++){
+            ext[i] = param[i+1];
+        }
+    }
+}
+
 
 void splash()
 {
@@ -133,6 +154,112 @@ void parseCommand(uint32_t command){
     // mv 
     }else if(memcmp((char*) command, "mv", 3)==0){
         printStr((char *) command, BIOS_LIGHT_BLUE);
+        struct FAT32DriverRequest request = {
+            .buf                   = &cl,
+            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .buffer_size           = 0,
+        };
+        request.buffer_size = 5*CLUSTER_SIZE;
+        int length = 0;
+        char* param = (char *) command + 3;
+        char ext[3];
+        getExt(param, &length, ext);
+        memcpy(request.name, (void *) (command + 3), length);
+        
+        int32_t readCode;
+        struct FAT32DriverRequest requestDst ={
+            .buf                   = &cl,
+            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .buffer_size           = 0,
+        };
+
+        memcpy(requestDst.name, listDir[depth], 8);
+        syscall(0, (uint32_t)&request, (uint32_t) &readCode, 0);
+        // 1 kalo bukan file, -1 kalo buffernya ga cukup, 0 load ke req.buf sebesar hasi divceil, 2 kalo?
+        switch (readCode){
+            case 0:
+                printStr("Berhasil membaca", BIOS_LIGHT_BLUE);
+                break;
+            case -1:
+                printStr("Buffer ga cukup bos", BIOS_LIGHT_BLUE);
+                break;
+            case 1:
+                printStr("Ini bukan file", BIOS_LIGHT_BLUE);
+                break;
+            case 2:
+                printStr("Tidak ditemukan", BIOS_LIGHT_BLUE);
+                break;
+            default:
+                printStr("Error", BIOS_LIGHT_BLUE);
+                break;
+        }
+
+        int32_t codeWrite;
+        struct FAT32DirectoryTable table = {};
+        requestDst.buf = &table;
+        syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode,0);
+        for(int i=0; i<64; i++){
+            if(memcmp(table.table[i].name, (void *)(command+3+length+5), len((char *)command+3+length+5))==0){
+                request.parent_cluster_number = (table.table[i].cluster_high<<16) | table.table[i].cluster_low;
+                syscall(2, (uint32_t) &request, (uint32_t)codeWrite, 0);
+                break;
+            }
+        }
+        // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup 
+        switch (codeWrite){
+        case 0:
+            printStr("Sukses", BIOS_BROWN);
+            break;
+        case -1:
+            printStr("Penyimpanan tidak cukup", BIOS_BROWN);
+            break;
+        case 1:
+            printStr("File/folder sudah ada", BIOS_BROWN);
+            break;
+        case 2:
+            printStr("Invalid parent cluster", BIOS_BROWN);
+            break;
+        default:
+            printStr("Error", BIOS_BROWN);
+            break;
+        }
+
+        struct FAT32DriverRequest request3 = {
+            .buf                   = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size           = 0,
+        };
+        request3.buffer_size = 5*CLUSTER_SIZE;
+        for(size_t i=0;i<3;i++){
+            request3.ext[i] = ext[i];
+        }
+        memcpy(request3.name, (void *) (command+3), 8);
+        int32_t delCode;
+        syscall(3, (uint32_t) &request3, (uint32_t) &delCode, 0);
+
+        //delcode, 2 artinya direktori yang tidak kosong, kalo 0 direktori kosong dan berhasil 
+        // 1 kalo ga ketemu namanya, 0 kalo berhasil hapus
+        switch (delCode){
+        case 0:
+            printStr("Sukses menghapus", BIOS_BROWN);
+            break;
+        case 1:
+            printStr("File/Folder tidak ditemukan", BIOS_BROWN);
+            break;
+        case 2:
+            printStr("Sukses menghapus", BIOS_BROWN);
+            break;
+        
+        default:
+            break;
+        }
+        
+        
+
+    // cls 
+    }else if(memcmp((char*) command, "cls", 3)==0){
+        printStr((char *) command, BIOS_LIGHT_BLUE);
+        clearScreen();
     // find
     }else{
         printStr("Masukkin command yang bener dong", BIOS_LIGHT_BLUE);
@@ -164,14 +291,14 @@ int main(void)
     {
 
         char buf[256];
-        printStr("OperatingStess@User:~", BIOS_LIGHT_GREEN);
+        printStr("OperatingStess@User:> ", BIOS_LIGHT_GREEN);
         int i = 0;
         while(listDir[i]!= NULL){
             printStr("/", BIOS_LIGHT_GREEN);
             printStr(listDir[i], BIOS_LIGHT_GREEN);
             i++;
         }
-        printStr("%", BIOS_LIGHT_GREEN);
+        // printStr("%", BIOS_LIGHT_GREEN);
         // syscall(5, (uint32_t) terminal, strlen(terminal), 0x2);
         syscall(4, (uint32_t)&buf, 0, 0);
         // printStr(buf, BIOS_PINK);

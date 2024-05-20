@@ -23,7 +23,7 @@ void framebuffer_write(uint8_t row, uint8_t col, char c, uint8_t fg, uint8_t bg)
     *where = c | (attrib << 8);
 }
 
-void framebuffer_clear(void)
+void framebuffer_clear()
 {
     uint16_t attrib = 0x0F00;
     volatile uint16_t *where = (volatile uint16_t *)FRAMEBUFFER_MEMORY_OFFSET;

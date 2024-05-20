@@ -211,7 +211,7 @@ int8_t read(struct FAT32DriverRequest request)
         }
     }
 
-    return 2;
+    return 2; //notfound?
 }
 
 int8_t read_directory(struct FAT32DriverRequest request)
@@ -247,7 +247,7 @@ int8_t write(struct FAT32DriverRequest request)
 {
     if (fat32_driver_state.fat_table.cluster_map[request.parent_cluster_number] != FAT32_FAT_END_OF_FILE)
     {
-        return 2;
+        return 2; //invalid parent cluster
     }
 
     read_clusters(&fat32_driver_state.dir_table_buf, request.parent_cluster_number, 1);
@@ -298,7 +298,7 @@ int8_t write(struct FAT32DriverRequest request)
         }
     }
     if (cluster_found < cluster_count)
-        return -1;
+        return -1; // penyimpanan tidak cukup
 
     memcpy(table[directory_location].name, request.name, 8);
     table[directory_location].cluster_low = locations[0] & 0xffff;

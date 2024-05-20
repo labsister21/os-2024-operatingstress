@@ -183,3 +183,8 @@ void puts(char *buf, uint32_t len, uint32_t color) {
         col_bound = col;
   }
 }
+
+void setCursorCLS(){
+    row = 0;
+    col = col_bound;
+}

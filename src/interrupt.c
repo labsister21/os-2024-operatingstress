@@ -181,5 +181,9 @@ void syscall(struct InterruptFrame frame)
     case 7:
         keyboard_state_activate();
         break;
+    case 8:
+        framebuffer_clear();
+        setCursorCLS();
+        break;
     }
 }
