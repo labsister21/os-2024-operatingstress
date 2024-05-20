@@ -15,6 +15,9 @@
 #define BIOS_PINK 0b1101
 #define BIOS_BROWN 0b0110
 #define BIOS_PURPLE 0b1101
+#define BIOS_DARK_ORANGE 0x6
+#define BIOS_DARK_RED 0x4
+#define BIOS_LIGHT_LIGHT_BLUE 0b1011
 
 void syscall(uint32_t eax, uint32_t ebx, uint32_t ecx, uint32_t edx)
 {
@@ -53,9 +56,33 @@ void getExt(char* param, int* length, char ext[]){
 
 void splash()
 {
-    printStr("                              _______ _______ _     _\n", BIOS_RED);
-    printStr("                              |_____| |______ |     |\n", BIOS_RED);
-    printStr("                              |     | ______| |_____|\n\n", BIOS_RED);
+    int delay = 3000;
+    for(int n = 0 ; n < delay ; n++){
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("                      ____                    __  _          \n", BIOS_LIGHT_GREEN);
+        printStr("                     / __ \\___  ___ _______ _/ /_(_)__  ___ _\n", BIOS_LIGHT_GREEN);
+        printStr("                    / /_/ / _ \\/ -_) __/ _ `/ __/ / _ \\/ _ `/\n", BIOS_LIGHT_GREEN);
+        printStr("                    \\____/ .__/\\__/_/  \\_,_/\\__/_/_//_/\\_, / \n", BIOS_LIGHT_GREEN);
+        printStr("                        /_/  ____                     /___/  \n", BIOS_LIGHT_GREEN);
+        printStr("                            / __/ /________ ___ ___                \n", BIOS_LIGHT_GREEN);
+        printStr("                           _\\ \\/ __/ __/ -_|_-<(_-<                \n", BIOS_LIGHT_GREEN);
+        printStr("                          /___/\\__/_/  \\__/___/___/                \n", BIOS_LIGHT_GREEN);
+        printStr("\n", BIOS_BLACK);
+        printStr("                                   loading...                \n", BIOS_WHITE);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        syscall(5,0,0,0);
+    }
 }
 
 uint32_t id = 0;
@@ -68,7 +95,6 @@ void parseCommand(uint32_t command)
     // cd
     if (memcmp((char *)command, "cd", 2) == 0)
     { // change directory
-        printStr((char *)command, BIOS_LIGHT_BLUE);
         if (memcmp("..", (void *)command + 3, 2) == 0)
         {
             if (depth == 0)
@@ -77,7 +103,7 @@ void parseCommand(uint32_t command)
                 return;
             }
             depth--;
-            printStr("Berhasil pindah ke", 0x2);
+            printStr("Berhasil pindah ke ", BIOS_LIGHT_BLUE);
             printStr(listDir[depth], 0xF);
             return;
         }
@@ -119,7 +145,6 @@ void parseCommand(uint32_t command)
     }
     else if (memcmp((char *)command, "ls", 2) == 0)
     {
-        printStr((char *)command, BIOS_LIGHT_BLUE);
         struct FAT32DriverRequest request = {
             .buf = &cl,
             .buffer_size = 0};
@@ -143,9 +168,8 @@ void parseCommand(uint32_t command)
         case 0:
             for (int i = 0; i < 64; i++)
             {
-                // printStr("  ", BIOS_LIGHT_GREEN);
-                printStr(table.table[i].name, BIOS_LIGHT_GREEN);
-                // printStr("\n\0", BIOS_LIGHT_GREEN);
+                printStr(table.table[i].name, BIOS_LIGHT_LIGHT_BLUE);
+                printStr(" ", BIOS_BLACK);
                 if (table.table[i].name[0] == '\0')
                 {
                     memcpy(listDir[depth], request.name, 8);
@@ -178,7 +202,7 @@ void parseCommand(uint32_t command)
         int32_t retcode;
         syscall(2, (uint32_t)&request, (uint32_t)&retcode, 0);
         if (retcode == 0)
-            printStr("Berhasil membuat folder", BIOS_LIGHT_GREEN);
+            printStr("Berhasil membuat folder", BIOS_LIGHT_BLUE);
         else if (retcode == 1)
             printStr("File/Folder sudah ada", BIOS_RED);
         else if (retcode == 2)
@@ -346,9 +370,67 @@ void parseCommand(uint32_t command)
 
     // cls 
     }else if(memcmp((char*) command, "cls", 3)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
         clearScreen();
     // find
+    }else if (memcmp((char *) command, "find", 4) == 0){ 
+        char *target;
+
+        target = (char *) command + 5;
+        for (int i = 0; i < strlen((char *) command + 5); i++)
+        {
+            // target dengan ekstensi dari .
+            if (((char *) command + 5)[i] == '.') 
+            {
+                // nama target tanpa ekstensi
+                for (int i = 0; i < strlen(target); i++)
+                {
+                    if (target[i] == '.')
+                    {
+                        target[i] = '\0';
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        // searching
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[id],
+            .buffer_size = 0,
+        }; 
+
+        if (id != 0) {
+            request.parent_cluster_number = listCluster[id-1];
+        }
+        else {
+            request.parent_cluster_number = listCluster[id];
+        }
+
+        // copy ke name directory request
+        memcpy(request.name, listDir[id], 8);
+
+        int32_t retcode;
+        struct FAT32DirectoryTable table = {};
+        request.buf = &table;
+        
+        // read directory
+        syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+
+        // komparasi
+        if (retcode == 0) {
+
+            for (int i = 0; i < 64; i++) {
+                char* name = table.table[i].name;
+                if(memcmp(name, target, strlen(target)) == 0){
+                    printStr("Ditemukan ", BIOS_LIGHT_BLUE);
+                    printStr((char *) target, BIOS_DARK_ORANGE);
+                    return;
+                }
+            }
+        }
+        printStr("Tidak ditemukan", BIOS_RED);
     }else{
         printStr("Masukkin command yang bener dong", BIOS_LIGHT_BLUE);
     }
@@ -372,10 +454,14 @@ int main(void)
     //     syscall(6, (uint32_t) "owo\n", 4, 0xF);
 
     syscall(7, 0, 0, 0);
-    // char *terminal = "OperatingStess ";
 
-    // buat nanti splashscreemn
+    // splashscreemn
     splash();
+
+    // bersihkan frame
+    syscall(8, 0, 0, 0);
+
+    // mulai frame utama
     while (true)
     {
 
@@ -388,6 +474,7 @@ int main(void)
             printStr(listDir[i], BIOS_PURPLE);
             i++;
         }
+        printStr(" ", BIOS_BLACK);
         // printStr("%", BIOS_LIGHT_GREEN);
         // syscall(5, (uint32_t) terminal, strlen(terminal), 0x2);
         syscall(4, (uint32_t)&buf, 0, 0);

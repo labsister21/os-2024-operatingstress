@@ -169,7 +169,8 @@ void keyboard_isr(void) {
 
 void puts(char *buf, uint32_t len, uint32_t color) {
     for (uint8_t i = 0; i < len; i++) {
-        framebuffer_set_cursor(row, col + i);
+        framebuffer_write(row, col + i + 1, ' ', 0xF, 0);
+        framebuffer_set_cursor(row, col + i + 1);
         if (buf[i] == '\n') {
             row++;
             col = 0;
