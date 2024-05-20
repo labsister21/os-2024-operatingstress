@@ -32,9 +32,33 @@ void printStr(char *buf, uint8_t color)
 
 void splash()
 {
-    printStr("                              _______ _______ _     _\n", BIOS_RED);
-    printStr("                              |_____| |______ |     |\n", BIOS_RED);
-    printStr("                              |     | ______| |_____|\n\n", BIOS_RED);
+    int delay = 2800;
+    for(int n = 0 ; n < delay ; n++){
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("                      ____                    __  _          \n", BIOS_LIGHT_GREEN);
+        printStr("                     / __ \\___  ___ _______ _/ /_(_)__  ___ _\n", BIOS_LIGHT_GREEN);
+        printStr("                    / /_/ / _ \\/ -_) __/ _ `/ __/ / _ \\/ _ `/\n", BIOS_LIGHT_GREEN);
+        printStr("                    \\____/ .__/\\__/_/  \\_,_/\\__/_/_//_/\\_, / \n", BIOS_LIGHT_GREEN);
+        printStr("                        /_/  ____                     /___/  \n", BIOS_LIGHT_GREEN);
+        printStr("                            / __/ /________ ___ ___                \n", BIOS_LIGHT_GREEN);
+        printStr("                           _\\ \\/ __/ __/ -_|_-<(_-<                \n", BIOS_LIGHT_GREEN);
+        printStr("                          /___/\\__/_/  \\__/___/___/                \n", BIOS_LIGHT_GREEN);
+        printStr("\n", BIOS_BLACK);
+        printStr("                                   loading...                \n", BIOS_WHITE);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        printStr("\n", BIOS_BLACK);
+        syscall(5,0,0,0);
+    }
 }
 
 uint32_t id = 0;
@@ -206,11 +230,86 @@ void parseCommand(uint32_t command)
 
         // cp
     }
-    else if (memcmp((char *)command, "cp", 3) == 0)
+    else if (memcmp((char *)command, "cp", 2) == 0)
     {
         printStr((char *)command, BIOS_LIGHT_BLUE);
-        // rm
+        // char *command;
+
+        struct FAT32DriverRequest request = {
+            .buf = &cl,
+            .parent_cluster_number = listCluster[depth],
+            .buffer_size = 0,
+        };
+        request.buffer_size = 5 * CLUSTER_SIZE;
+        int nameLen = 0;
+        char *itr = (char *)command + 3;
+        for (int i = 0; i < strlen(itr); i++)
+        {
+            if (itr[i] == '.')
+            {
+                request.ext[0] = itr[i + 1];
+                request.ext[1] = itr[i + 2];
+                request.ext[2] = itr[i + 3];
+                break;
+            }
+            else
+            {
+                nameLen++;
+            }
+        }
+        memcpy(request.name, (void *)(command + 3), nameLen);
+        int32_t retcode;
+        syscall(0, (uint32_t)&request, (uint32_t)&retcode, 0);
+        if (retcode == 0)
+        {
+            printStr(request.buf, 0xF);
+            printStr("", 0xF);
+        }
+        else if (retcode == 1)
+            printStr("Bukan File ey", BIOS_RED);
+        else if (retcode == 2)
+            printStr("Gaada filenya", BIOS_RED);
+        else
+            printStr("Teuing error naon", BIOS_RED);
+
+        // direktori tujuan
+        struct FAT32DriverRequest request2 = {
+            .buf                   = &cl,
+            .parent_cluster_number = ROOT_CLUSTER_NUMBER,
+            .buffer_size           = 0,
+        };
+        memcpy(request2.name, listDir[id], 8);
+
+        int32_t retcode2;
+        struct FAT32DirectoryTable table = {};
+        request2.buf = &table;    
+
+        // baca direktori
+        syscall(1, (uint32_t) &request2, (uint32_t) &retcode, 0);
+
+        // write file (copy)
+        for(int i = 0; i < 64; i++){
+            char* name = table.table[i].name;
+            char* gatau = (char *) (command + 3 + nameLen + 5);
+            if(memcmp(name, (void * )(gatau), strlen((char *) gatau)) == 0){
+                request.parent_cluster_number = (table.table[i].cluster_high << 16) | table.table[i].cluster_low;
+                syscall(2, (uint32_t) &request, (uint32_t) &retcode2, 0);
+                break;
+            }
+        }
+
+        if (retcode2 == 0)
+            printStr("Write success", 0x2);
+        else if (retcode2 == 1)
+            printStr("File/Folder already exist", 0x4);
+        else if (retcode2 == 2)
+            printStr("Invalid parent cluster", 0x4);
+        else
+            printStr("Target folder not found", 0x4);
+
+    
     }
+    // rm
     else if (memcmp((char *)command, "rm", 3) == 0)
     {
         printStr((char *)command, BIOS_LIGHT_BLUE);
@@ -244,11 +343,12 @@ int main(void)
     // if (retcode == 0)
     //     syscall(6, (uint32_t) "owo\n", 4, 0xF);
 
-    syscall(7, 0, 0, 0);
     // char *terminal = "OperatingStess ";
 
     // buat nanti splashscreemn
     splash();
+    syscall(7, 0, 0, 0);
+    syscall(5, 0, 0, 0);
     while (true)
     {
 

@@ -183,3 +183,8 @@ void puts(char *buf, uint32_t len, uint32_t color) {
         col_bound = col;
   }
 }
+
+void reset_keyboard() {
+    col = 0;
+    row = 0;
+}

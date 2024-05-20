@@ -66,5 +66,7 @@ void keyboard_isr(void);
 
 void puts(char *buf, uint32_t len, uint32_t color);
 
+void reset_keyboard();
+
 #endif
 

@@ -170,7 +170,7 @@ void syscall(struct InterruptFrame frame)
         memcpy((char *)frame.cpu.general.ebx, buffer, KEYBOARD_BUFFER_SIZE);
         break;
     case 5:
-        putchar(frame.cpu.general.ebx, frame.cpu.general.edx);
+        reset_keyboard();
         break;
     case 6:
         puts(
@@ -179,7 +179,7 @@ void syscall(struct InterruptFrame frame)
             frame.cpu.general.edx); // Assuming puts() exist in kernel
         break;
     case 7:
-        keyboard_state_activate();
+        framebuffer_clear();
         break;
     }
 }
