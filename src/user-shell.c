@@ -500,14 +500,17 @@ void parseCommand(uint32_t command)
             .buffer_size = 0,
         };
 
-        if (depth != 0)
+        // if (depth != 0)
+        // {
+        //     request.parent_cluster_number = listCluster[depth - 1];
+        //     depth--;
+        // }
+        while (depth != 0)
         {
-            request.parent_cluster_number = listCluster[depth - 1];
+            depth--;
         }
-        else
-        {
-            request.parent_cluster_number = listCluster[depth];
-        }
+        
+        request.parent_cluster_number = listCluster[depth];
 
         // copy ke name directory request
         memcpy(request.name, listDir[depth], 8);
@@ -529,13 +532,16 @@ void parseCommand(uint32_t command)
                 if (memcmp(name, target, strlen(target)) == 0)
                 {
                     printStr("Ditemukan ", BIOS_LIGHT_BLUE);
+                    uint32_t i = 0;
+                    while (i != depth + 1)
+                    {
+                        printStr("/", BIOS_PURPLE);
+                        printStr(listDir[i], BIOS_PURPLE);
+                        i++;
+                    }
+                    printStr("/", BIOS_PURPLE);
                     printStr((char *)target, BIOS_DARK_ORANGE);
                     return;
-                }
-
-                if (table.table[i].name[0] == '\0')
-                {
-                    memcpy(listDir[depth], request.name, 8);
                 }
             }
         }
