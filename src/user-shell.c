@@ -3,7 +3,6 @@
 #include "header/stdlib/string.h"
 #include "header/text/framebuffer.h"
 
-
 // Color
 #define BIOS_LIGHT_GREEN 0b1010
 #define BIOS_LIGHT_BLUE 0b1001
@@ -35,29 +34,34 @@ void printStr(char *buf, uint8_t color)
     syscall(6, (uint32_t)buf, strlen(buf), color);
 }
 
-void clearScreen(){
-    syscall(8,0,0,0);
+void clearScreen()
+{
+    syscall(8, 0, 0, 0);
 }
 
-void getExt(char* param, int* length, char ext[]){
-    while(*param != '.' && *param !='\0'){
+void getExt(char *param, int *length, char ext[])
+{
+    while (*param != '.' && *param != '\0')
+    {
         // printf("%d\n", *length);
-        *length+=1;
+        *length += 1;
         param++;
     }
 
-    if (*param == '.') {
-        for(size_t i=0; i<3; i++){
-            ext[i] = param[i+1];
+    if (*param == '.')
+    {
+        for (size_t i = 0; i < 3; i++)
+        {
+            ext[i] = param[i + 1];
         }
     }
 }
 
-
 void splash()
 {
     int delay = 3000;
-    for(int n = 0 ; n < delay ; n++){
+    for (int n = 0; n < delay; n++)
+    {
         printStr("\n", BIOS_BLACK);
         printStr("\n", BIOS_BLACK);
         printStr("\n", BIOS_BLACK);
@@ -81,11 +85,10 @@ void splash()
         printStr("\n", BIOS_BLACK);
         printStr("\n", BIOS_BLACK);
         printStr("\n", BIOS_BLACK);
-        syscall(5,0,0,0);
+        syscall(5, 0, 0, 0);
     }
 }
 
-uint32_t id = 0;
 uint32_t depth = 0;
 uint32_t listCluster[100];
 char *listDir[100];
@@ -145,9 +148,12 @@ void parseCommand(uint32_t command)
     }
     else if (memcmp((char *)command, "ls", 2) == 0)
     {
-        struct FAT32DriverRequest request = {
-            .buf = &cl,
-            .buffer_size = 0};
+        struct FAT32DriverRequest request =
+            {
+                .buf = &cl,
+                .parent_cluster_number = listCluster[depth],
+                .buffer_size = 0,
+            };
         if (!depth)
         {
             request.parent_cluster_number = listCluster[depth];
@@ -168,8 +174,12 @@ void parseCommand(uint32_t command)
         case 0:
             for (int i = 0; i < 64; i++)
             {
-                printStr(table.table[i].name, BIOS_LIGHT_LIGHT_BLUE);
-                printStr(" ", BIOS_BLACK);
+                if (table.table[i].user_attribute == UATTR_NOT_EMPTY)
+                {
+                    printStr(table.table[i].name, BIOS_LIGHT_LIGHT_BLUE);
+                    printStr(" ", BIOS_BLACK);
+                }
+
                 if (table.table[i].name[0] == '\0')
                 {
                     memcpy(listDir[depth], request.name, 8);
@@ -186,8 +196,8 @@ void parseCommand(uint32_t command)
             printStr("Error", BIOS_RED);
             break;
         }
-
-    }else if (memcmp((char *)command, "mkdir", 5) == 0)
+    }
+    else if (memcmp((char *)command, "mkdir", 5) == 0)
     {
         struct ClusterBuffer cbuf[5];
         struct FAT32DriverRequest request =
@@ -195,7 +205,7 @@ void parseCommand(uint32_t command)
                 .buf = cbuf,
                 .name = "",
                 .ext = "\0\0\0",
-                .parent_cluster_number = listCluster[id],
+                .parent_cluster_number = listCluster[depth],
                 .buffer_size = 0,
             };
         memcpy(request.name, (void *)(command + 6), 8);
@@ -239,8 +249,8 @@ void parseCommand(uint32_t command)
         syscall(0, (uint32_t)&request, (uint32_t)&retcode, 0);
         if (retcode == 0)
         {
-            printStr(request.buf, 0xF);
-            printStr("", 0xF);
+            printStr(request.buf, BIOS_WHITE);
+            printStr("", BIOS_WHITE);
         }
         else if (retcode == 1)
             printStr("Bukan File ey", BIOS_RED);
@@ -249,74 +259,83 @@ void parseCommand(uint32_t command)
         else
             printStr("Teuing error naon", BIOS_RED);
 
-    // cp
-    }else if(memcmp((char*) command, "cp", 3)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
-    // rm 
-    }else if(memcmp((char*) command, "rm", 3)==0){
-        printStr((char *) command, BIOS_LIGHT_BLUE);
-    // mv 
-    }else if(memcmp((char*) command, "mv", 2)==0){
-        // printStr((char *) command, BIOS_LIGHT_BLUE);
+        // cp
+    }
+    else if (memcmp((char *)command, "cp", 3) == 0)
+    {
+        printStr((char *)command, BIOS_LIGHT_BLUE);
+        // rm
+    }
+    else if (memcmp((char *)command, "rm", 3) == 0)
+    {
+        printStr((char *)command, BIOS_LIGHT_BLUE);
+        // mv
+    }
+    else if (memcmp((char *)command, "mv", 2) == 0)
+    {
         struct FAT32DriverRequest request = {
-            .buf                   = &cl,
+            .buf = &cl,
             .parent_cluster_number = listCluster[depth],
-            .buffer_size           = 0,
+            .buffer_size = 0,
         };
-        request.buffer_size = 5*CLUSTER_SIZE;
+        request.buffer_size = 5 * CLUSTER_SIZE;
         int length = 0;
-        char* param = (char *) command + 3;
+        char *param = (char *)command + 3;
         // char ext[3];
         getExt(param, &length, request.ext);
         // for(size_t i=0;i<3;i++){
         //     request.ext[i] = ext[i];
         //     printStr((char *)request.ext[i], BIOS_DARK_GREY);
         // }
-        memcpy(request.name, (void *) (command + 3), length);
+        memcpy(request.name, (void *)(command + 3), length);
         printStr(request.ext, BIOS_DARK_GREY);
-        
+
         int32_t readCode;
-        struct FAT32DriverRequest requestDst ={
-            .buf                   = &cl,
+        struct FAT32DriverRequest requestDst = {
+            .buf = &cl,
             .parent_cluster_number = listCluster[depth],
-            .buffer_size           = 0,
+            .buffer_size = 0,
         };
 
         memcpy(requestDst.name, listDir[depth], strlen(listDir[depth]));
-        syscall(0, (uint32_t)&request, (uint32_t) &readCode, 0);
+        syscall(0, (uint32_t)&request, (uint32_t)&readCode, 0);
         // 1 kalo bukan file, -1 kalo buffernya ga cukup, 0 load ke req.buf sebesar hasi divceil, 2 kalo?
-        switch (readCode){
-            case 0:
-                printStr("Berhasil membaca", BIOS_LIGHT_BLUE);
-                break;
-            case -1:
-                printStr("Buffer ga cukup bos", BIOS_LIGHT_BLUE);
-                break;
-            case 1:
-                printStr("Ini bukan file", BIOS_LIGHT_BLUE);
-                break;
-            case 2:
-                printStr("Tidak ditemukan", BIOS_LIGHT_BLUE);
-                break;
-            default:
-                printStr("Error", BIOS_LIGHT_BLUE);
-                break;
+        switch (readCode)
+        {
+        case 0:
+            printStr("Berhasil membaca", BIOS_LIGHT_BLUE);
+            break;
+        case -1:
+            printStr("Buffer ga cukup bos", BIOS_LIGHT_BLUE);
+            break;
+        case 1:
+            printStr("Ini bukan file", BIOS_LIGHT_BLUE);
+            break;
+        case 2:
+            printStr("Tidak ditemukan", BIOS_LIGHT_BLUE);
+            break;
+        default:
+            printStr("Error", BIOS_LIGHT_BLUE);
+            break;
         }
 
         int32_t codeWrite;
         struct FAT32DirectoryTable table = {};
         requestDst.buf = &table;
-        syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode,0);
+        syscall(1, (uint32_t)&requestDst, (uint32_t)&readCode, 0);
         printStr(requestDst.name, BIOS_WHITE);
-        for(int i=0; i<64; i++){
-            if(memcmp(table.table[i].name, (void *)(command+3+length+5), len((char *)command+3+length+5))==0){
-                request.parent_cluster_number = (table.table[i].cluster_high<<16) | table.table[i].cluster_low;
-                syscall(2, (uint32_t) &request, (uint32_t)&codeWrite, 0);
+        for (int i = 0; i < 64; i++)
+        {
+            if (memcmp(table.table[i].name, (void *)(command + 3 + length + 5), len((char *)command + 3 + length + 5)) == 0)
+            {
+                request.parent_cluster_number = (table.table[i].cluster_high << 16) | table.table[i].cluster_low;
+                syscall(2, (uint32_t)&request, (uint32_t)&codeWrite, 0);
                 break;
             }
         }
-        // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup 
-        switch (codeWrite){
+        // 0 sukses, 2 jika invalid parent cluster, 1 jika sudah ada file/folder, -1 penyimpanan tidak cukup
+        switch (codeWrite)
+        {
         case 0:
             printStr("Sukses", BIOS_BROWN);
             break;
@@ -335,23 +354,24 @@ void parseCommand(uint32_t command)
         }
 
         struct FAT32DriverRequest request3 = {
-            .buf                   = &cl,
+            .buf = &cl,
             .parent_cluster_number = listCluster[depth],
-            .buffer_size           = 0,
+            .buffer_size = 0,
         };
-        request3.buffer_size = 5*CLUSTER_SIZE;
+        request3.buffer_size = 5 * CLUSTER_SIZE;
         getExt(param, &length, request3.ext);
         printStr(request3.name, BIOS_BROWN);
         // for(size_t i=0;i<3;i++){
         //     request3.ext[i] = ext[i];
         // }
-        memcpy(request3.name, (void *) (command+3), length);
+        memcpy(request3.name, (void *)(command + 3), length);
         int32_t delCode;
-        syscall(3, (uint32_t) &request3, (uint32_t) &delCode, 0);
+        syscall(3, (uint32_t)&request3, (uint32_t)&delCode, 0);
 
-        //delcode, 2 artinya direktori yang tidak kosong, kalo 0 direktori kosong dan berhasil 
-        // 1 kalo ga ketemu namanya, 0 kalo berhasil hapus
-        switch (delCode){
+        // delcode, 2 artinya direktori yang tidak kosong, kalo 0 direktori kosong dan berhasil
+        //  1 kalo ga ketemu namanya, 0 kalo berhasil hapus
+        switch (delCode)
+        {
         case 0:
             printStr("Sukses menghapus", BIOS_BROWN);
             break;
@@ -361,25 +381,27 @@ void parseCommand(uint32_t command)
         case 2:
             printStr("Sukses menghapus", BIOS_BROWN);
             break;
-        
+
         default:
             break;
         }
-        
-        
 
-    // cls 
-    }else if(memcmp((char*) command, "cls", 3)==0){
+        // cls
+    }
+    else if (memcmp((char *)command, "cls", 3) == 0)
+    {
         clearScreen();
-    // find
-    }else if (memcmp((char *) command, "find", 4) == 0){ 
+        // find
+    }
+    else if (memcmp((char *)command, "find", 4) == 0)
+    {
         char *target;
 
-        target = (char *) command + 5;
-        for (int i = 0; i < strlen((char *) command + 5); i++)
+        target = (char *)command + 5;
+        for (int i = 0; i < strlen((char *)command + 5); i++)
         {
             // target dengan ekstensi dari .
-            if (((char *) command + 5)[i] == '.') 
+            if (((char *)command + 5)[i] == '.')
             {
                 // nama target tanpa ekstensi
                 for (int i = 0; i < strlen(target); i++)
@@ -397,41 +419,48 @@ void parseCommand(uint32_t command)
         // searching
         struct FAT32DriverRequest request = {
             .buf = &cl,
-            .parent_cluster_number = listCluster[id],
+            .parent_cluster_number = listCluster[depth],
             .buffer_size = 0,
-        }; 
+        };
 
-        if (id != 0) {
-            request.parent_cluster_number = listCluster[id-1];
+        if (depth != 0)
+        {
+            request.parent_cluster_number = listCluster[depth - 1];
         }
-        else {
-            request.parent_cluster_number = listCluster[id];
+        else
+        {
+            request.parent_cluster_number = listCluster[depth];
         }
 
         // copy ke name directory request
-        memcpy(request.name, listDir[id], 8);
+        memcpy(request.name, listDir[depth], 8);
 
         int32_t retcode;
         struct FAT32DirectoryTable table = {};
         request.buf = &table;
-        
+
         // read directory
-        syscall(1, (uint32_t) &request, (uint32_t) &retcode, 0);
+        syscall(1, (uint32_t)&request, (uint32_t)&retcode, 0);
 
         // komparasi
-        if (retcode == 0) {
+        if (retcode == 0)
+        {
 
-            for (int i = 0; i < 64; i++) {
-                char* name = table.table[i].name;
-                if(memcmp(name, target, strlen(target)) == 0){
+            for (int i = 0; i < 64; i++)
+            {
+                char *name = table.table[i].name;
+                if (memcmp(name, target, strlen(target)) == 0)
+                {
                     printStr("Ditemukan ", BIOS_LIGHT_BLUE);
-                    printStr((char *) target, BIOS_DARK_ORANGE);
+                    printStr((char *)target, BIOS_DARK_ORANGE);
                     return;
                 }
             }
         }
         printStr("Tidak ditemukan", BIOS_RED);
-    }else{
+    }
+    else
+    {
         printStr("Masukkin command yang bener dong", BIOS_LIGHT_BLUE);
     }
 }

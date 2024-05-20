@@ -139,7 +139,6 @@ void putchar(char str, uint32_t color)
     }
 }
 
-
 void syscall(struct InterruptFrame frame)
 {
     switch (frame.cpu.general.eax)
